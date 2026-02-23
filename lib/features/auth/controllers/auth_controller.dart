@@ -86,9 +86,17 @@ class AuthController extends StateNotifier<AuthState> {
     final result = await _authRepository.login(request);
 
     return result.when(
-      success: (authResponse) {
+      success: (authResponse) async {
+        // After successful login, fetch current user data to get complete profile
+        final userResult = await _authRepository.getCurrentUser();
+
+        final finalUser = userResult.when(
+          success: (user) => user,
+          failure: (_) => authResponse.user, // Fallback to login response user
+        );
+
         state = state.copyWith(
-          user: authResponse.user,
+          user: finalUser,
           isAuthenticated: true,
           isLoading: false,
           error: null,
@@ -237,6 +245,24 @@ class AuthController extends StateNotifier<AuthState> {
           message: null,
         );
         return false;
+      },
+    );
+  }
+
+  // Get current user (refresh user data from server)
+  Future<void> getCurrentUser() async {
+    final result = await _authRepository.getCurrentUser();
+
+    result.when(
+      success: (user) {
+        state = state.copyWith(
+          user: user,
+          error: null,
+        );
+      },
+      failure: (error) {
+        // Silent failure - don't update state with error
+        // as this is just a refresh operation
       },
     );
   }

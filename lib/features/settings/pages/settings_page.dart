@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../routes/route_constants.dart';
+import '../../../core/constants/app_assets.dart';
+import '../../../core/widgets/bottom_navigation.dart';
 import '../../auth/controllers/auth_controller.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -11,184 +11,215 @@ class SettingsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: AppPadding.medium,
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: Column(
         children: [
-          _buildSection('Account', [
-            _buildSettingTile(
-              context,
-              'Profile',
-              'Manage your personal information',
-              Icons.person_outline,
-              () => context.push(RouteConstants.profile),
-            ),
-            _buildSettingTile(
-              context,
-              'Premium Subscription',
-              'Upgrade for advanced features',
-              Icons.star_outline,
-              () => context.push(RouteConstants.purchase),
-            ),
-          ]),
-          _buildSection('Preferences', [
-            _buildSwitchTile(
-              'Push Notifications',
-              'Receive goal reminders and updates',
-              Icons.notifications_outlined,
-              true,
-              (value) {},
-            ),
-            _buildSwitchTile(
-              'Dark Mode',
-              'Use dark theme',
-              Icons.dark_mode_outlined,
-              false,
-              (value) {},
-            ),
-          ]),
-          _buildSection('Support', [
-            _buildSettingTile(
-              context,
-              'Help & Support',
-              'Get help and contact support',
-              Icons.help_outline,
-              () {},
-            ),
-            _buildSettingTile(
-              context,
-              'Privacy Policy',
-              'Read our privacy policy',
-              Icons.privacy_tip_outlined,
-              () {},
-            ),
-            _buildSettingTile(
-              context,
-              'Terms of Service',
-              'Read our terms of service',
-              Icons.description_outlined,
-              () {},
-            ),
-          ]),
-          _buildSection('Account Actions', [
-            _buildSettingTile(
-              context,
-              'Sign Out',
-              'Sign out of your account',
-              Icons.logout,
-              () => _showSignOutDialog(context, ref),
-              isDestructive: true,
-            ),
-          ]),
-        ],
-      ),
-    );
-  }
+          // Header
+          Container(
+            color: Colors.white,
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                height: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Back button
+                    GestureDetector(
+                      onTap: () => context.go('/home'),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF0147D9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.chevron_left,
+                          color: Colors.white,
+                          size: 28,
+                        ),
+                      ),
+                    ),
 
-  Widget _buildSection(String title, List<Widget> children) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                    // Title
+                    const Text(
+                      'Settings',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Poppins',
+                        color: Colors.black87,
+                      ),
+                    ),
+
+                    // Drawer icon
+                    GestureDetector(
+                      onTap: () => openDrawer(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0147D9),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Image.asset(
+                              AppAssets.drawerIcon,
+                              fit: BoxFit.contain,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          ...children,
+
+          // Content
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+              child: Column(
+                children: [
+                  // Change Name
+                  _buildSettingItem(
+                    context: context,
+                    title: 'Change Name',
+                    onTap: () => context.push('/profile/change-name'),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Change Email
+                  _buildSettingItem(
+                    context: context,
+                    title: 'Change Email',
+                    onTap: () => context.push('/profile/change-email'),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Change Password
+                  _buildSettingItem(
+                    context: context,
+                    title: 'Change Password',
+                    onTap: () => context.push('/profile/change-password'),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Logout
+                  _buildSettingItem(
+                    context: context,
+                    title: 'Logout',
+                    onTap: () => _showLogoutDialog(context, ref),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSettingTile(
-    BuildContext context,
-    String title,
-    String subtitle,
-    IconData icon,
-    VoidCallback onTap, {
-    bool isDestructive = false,
+  Widget _buildSettingItem({
+    required BuildContext context,
+    required String title,
+    required VoidCallback onTap,
   }) {
-    return ListTile(
-      leading: Icon(
-        icon,
-        color: isDestructive ? AppColors.error : AppColors.textSecondary,
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: isDestructive ? AppColors.error : AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(
-          fontSize: 12,
-          color: AppColors.textSecondary,
-        ),
-      ),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+    return GestureDetector(
       onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: const Color(0xFF0147D9),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: 'Poppins',
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                color: Colors.white,
+                size: 24,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildSwitchTile(
-    String title,
-    String subtitle,
-    IconData icon,
-    bool value,
-    Function(bool) onChanged,
-  ) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.textSecondary),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(
-          fontSize: 12,
-          color: AppColors.textSecondary,
-        ),
-      ),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-      ),
-    );
-  }
-
-  void _showSignOutDialog(BuildContext context, WidgetRef ref) {
+  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out?'),
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          'Logout',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Poppins',
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to logout?',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+          ),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey,
+                fontFamily: 'Poppins',
+              ),
+            ),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ref.read(authControllerProvider.notifier).logout();
+            onPressed: () async {
+              // Close the dialog first
+              Navigator.pop(dialogContext);
+
+              // Perform logout
+              await ref.read(authControllerProvider.notifier).logout();
+
+              // The router will automatically redirect to login
+              // due to the redirect logic in app_router.dart
             },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Sign Out'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF0147D9),
+            ),
+            child: const Text(
+              'Logout',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),

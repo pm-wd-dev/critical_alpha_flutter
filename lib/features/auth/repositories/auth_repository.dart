@@ -390,7 +390,33 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      final user = UserModel.fromJson(response.data!);
+      // Handle React Native API response format
+      final responseData = response.data!;
+      Map<String, dynamic> userData;
+
+      // Check if response has 'data' wrapper
+      if (responseData['data'] != null && responseData['data'] is Map) {
+        userData = responseData['data'] as Map<String, dynamic>;
+      } else {
+        userData = responseData;
+      }
+
+      // Map the fields properly
+      // React Native API might use different field names
+      if (userData['_id'] != null && userData['id'] == null) {
+        userData['id'] = userData['_id'];
+      }
+      if (userData['name'] != null && userData['username'] == null) {
+        userData['username'] = userData['name'];
+      }
+      if (userData['first_name'] != null && userData['firstName'] == null) {
+        userData['firstName'] = userData['first_name'];
+      }
+      if (userData['last_name'] != null && userData['lastName'] == null) {
+        userData['lastName'] = userData['last_name'];
+      }
+
+      final user = UserModel.fromJson(userData);
       await storeUser(user);
 
       return Result.success(user);

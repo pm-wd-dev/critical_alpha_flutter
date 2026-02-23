@@ -1,16 +1,282 @@
 import 'package:flutter/material.dart';
-import '../../../core/constants/app_constants.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_assets.dart';
+import '../services/profile_service.dart';
+import '../../auth/controllers/auth_controller.dart';
 
-class ChangeEmailPage extends StatelessWidget {
+class ChangeEmailPage extends ConsumerStatefulWidget {
   const ChangeEmailPage({super.key});
+
+  @override
+  ConsumerState<ChangeEmailPage> createState() => _ChangeEmailPageState();
+}
+
+class _ChangeEmailPageState extends ConsumerState<ChangeEmailPage> {
+  final TextEditingController _emailController = TextEditingController();
+  final ProfileService _profileService = ProfileService();
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill with current email
+    final user = ref.read(authControllerProvider).user;
+    if (user != null) {
+      final email = user.email;
+      if (email != null && email.isNotEmpty) {
+        _emailController.text = email;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    return emailRegex.hasMatch(email);
+  }
+
+  Future<void> _changeEmail() async {
+    final email = _emailController.text.trim();
+
+    // Validation
+    if (email.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter your email address';
+      });
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      setState(() {
+        _errorMessage = 'Please enter a valid email address';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final result = await _profileService.changeEmail(email);
+
+      if (result['success']) {
+        // Update local user data - reload user info
+        await ref.read(authControllerProvider.notifier).getCurrentUser();
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Email updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.go('/home');
+        }
+      } else {
+        setState(() {
+          _errorMessage = result['message'] ?? 'Failed to update email';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occurred. Please try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(title: const Text('Change Email')),
-      body: const Center(
-        child: Text('Change Email - Coming Soon'),
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                        MediaQuery.of(context).padding.top -
+                        MediaQuery.of(context).padding.bottom,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 40),
+
+                // Logo
+                Center(
+                  child: Image.asset(
+                    AppAssets.logo,
+                    height: 150,
+                    width: 200,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+
+                const SizedBox(height: 60),
+
+                // Form Section
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Email Label
+                      const Text(
+                        'Email',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Email Input
+                      TextField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Colors.black87,
+                          fontFamily: 'Poppins',
+                        ),
+                        onChanged: (value) {
+                          if (_errorMessage != null) {
+                            setState(() {
+                              _errorMessage = null;
+                            });
+                          }
+                        },
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: BorderSide(
+                              color: Colors.grey.shade300,
+                              width: 1,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF0147D9),
+                              width: 1.5,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF5F5F5),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          hintText: 'Enter your email',
+                          hintStyle: TextStyle(
+                            color: Colors.grey[500],
+                            fontFamily: 'Poppins',
+                          ),
+                        ),
+                      ),
+
+                      // Error Message
+                      if (_errorMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 40),
+
+                      // Save Button
+                      Center(
+                        child: _isLoading
+                            ? const CircularProgressIndicator()
+                            : SizedBox(
+                                width: 140,
+                                height: 45,
+                                child: ElevatedButton(
+                                  onPressed: _changeEmail,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF0147D9),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(7),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text(
+                                    'Save',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontFamily: 'Poppins',
+                                    ),
+                                  ),
+                                ),
+                              ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // Cancel Button
+                      Center(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF331E82),
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 40),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

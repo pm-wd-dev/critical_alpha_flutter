@@ -13,7 +13,7 @@ import '../features/goals/pages/plans_page.dart';
 import '../features/goals/pages/create_plan_page.dart';
 import '../features/goals/pages/add_goal_page.dart';
 import '../features/goals/pages/assessment_page.dart';
-import '../features/results/pages/result_chart_page.dart';
+import '../features/results/pages/results_screen.dart';
 import '../features/results/pages/result_line_chart_page.dart';
 import '../features/results/pages/result_radar_chart_page.dart';
 import '../features/audio/pages/audio_section_page.dart';
@@ -26,6 +26,9 @@ import '../features/profile/pages/change_email_page.dart';
 import '../features/profile/pages/change_password_page.dart';
 import '../features/profile/pages/change_picture_page.dart';
 import '../features/purchase/pages/purchase_page.dart';
+import '../features/plans/pages/plan_detail_page.dart';
+import '../features/assessment/pages/assessment_page.dart' as plan_assessment;
+import '../features/assessment/pages/assessment_complete_page.dart';
 import '../features/auth/controllers/auth_controller.dart';
 import '../core/widgets/bottom_navigation.dart';
 import 'route_constants.dart';
@@ -176,7 +179,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: RouteConstants.results,
             name: RouteNames.results,
-            builder: (context, state) => const ResultChartPage(),
+            builder: (context, state) {
+              final planId = state.uri.queryParameters['planId'];
+              return ResultsScreen(planId: planId);
+            },
             routes: [
               GoRoute(
                 path: 'line-chart',
@@ -255,6 +261,39 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteConstants.purchase,
         name: RouteNames.purchase,
         builder: (context, state) => const PurchasePage(),
+      ),
+
+      // Plan Detail Route
+      GoRoute(
+        path: '/plan/:planId',
+        name: 'planDetail',
+        builder: (context, state) {
+          final planId = state.pathParameters['planId'] ?? '';
+          return PlanDetailPage(planId: planId);
+        },
+      ),
+
+      // Assessment Routes
+      GoRoute(
+        path: '/assessment/:planId',
+        name: 'planAssessment',
+        builder: (context, state) {
+          final planId = state.pathParameters['planId'] ?? '';
+          return plan_assessment.AssessmentPage(planId: planId);
+        },
+      ),
+
+      GoRoute(
+        path: '/assessment-complete/:planId',
+        name: 'assessmentComplete',
+        builder: (context, state) {
+          final planId = state.pathParameters['planId'] ?? '';
+          final assessments = state.extra as List<Map<String, dynamic>>?;
+          return AssessmentCompletePage(
+            planId: planId,
+            assessments: assessments,
+          );
+        },
       ),
     ],
     errorBuilder: (context, state) {

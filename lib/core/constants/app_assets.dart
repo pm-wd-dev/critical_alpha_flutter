@@ -9,6 +9,7 @@ class AppAssets {
 
   // Images
   static const String completeGoals = '${_imagesPath}completegoals.png';
+  static const String assessmentComplete = '${_imagesPath}completegoals.png'; // Using same image
   static const String facebook = '${_imagesPath}facebook.png';
   static const String goalsImage = '${_imagesPath}goalsimage.png';
   static const String instagram = '${_imagesPath}instagram.png';

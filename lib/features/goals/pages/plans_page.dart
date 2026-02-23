@@ -60,45 +60,47 @@ class _PlansPageState extends ConsumerState<PlansPage> {
       body: Column(
         children: [
           // Green status header (shown when plan is completed)
-          AnimatedContainer(
+          AnimatedSize(
             duration: const Duration(milliseconds: 300),
-            height: _showPlanStatus ? null : 0,
-            width: double.infinity,
-            color: const Color(0xFF4CAF50),
-            child: _showPlanStatus
-                ? SafeArea(
-                    bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Plan Status',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Poppins',
+            child: Container(
+              width: double.infinity,
+              color: const Color(0xFF4CAF50),
+              child: _showPlanStatus
+                  ? SafeArea(
+                      bottom: false,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Plan Status',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Poppins',
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _statusMessage,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontFamily: 'Poppins',
+                            const SizedBox(height: 4),
+                            Text(
+                              _statusMessage,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontFamily: 'Poppins',
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                : const SizedBox.shrink(),
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ),
 
           // Main header
@@ -306,7 +308,8 @@ class _PlansPageState extends ConsumerState<PlansPage> {
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: () {
-            // Handle plan tap if needed
+            // Navigate to plan detail page
+            context.push('/plan/${plan.id}');
           },
           borderRadius: BorderRadius.circular(16),
           child: Padding(
