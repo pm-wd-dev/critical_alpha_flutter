@@ -77,13 +77,14 @@ class _CodeVerificationPageState extends ConsumerState<CodeVerificationPage> {
 
       if (next.message != null && next.message!.contains('verified')) {
         _showSuccess(next.message!);
-        // Navigate to login or home based on type
-        Future.delayed(const Duration(seconds: 2), () {
+        // Navigate based on verification type
+        Future.delayed(const Duration(seconds: 1), () {
           if (mounted) {
             if (widget.type == 'email_verification') {
               context.go(RouteConstants.login);
             } else if (widget.type == 'password_reset') {
-              context.push('/new-password?token=dummy_token');
+              // Navigate to new password page with email parameter
+              context.go('${RouteConstants.newPassword}?email=${Uri.encodeComponent(widget.email)}');
             } else {
               context.go(RouteConstants.home);
             }
@@ -131,8 +132,8 @@ class _CodeVerificationPageState extends ConsumerState<CodeVerificationPage> {
     return Center(
       child: Image.asset(
         AppAssets.logo,
-        height: 120,
-        width: 180,
+        height: 150,
+        width: 200,
         fit: BoxFit.contain,
       ),
     );
@@ -166,67 +167,93 @@ class _CodeVerificationPageState extends ConsumerState<CodeVerificationPage> {
   }
 
   Widget _buildPinCodeField() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: PinCodeTextField(
-        appContext: context,
-        length: 6,
-        controller: _codeController,
-        keyboardType: TextInputType.number,
-        textStyle: const TextStyle(
-          fontSize: 22,
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w600,
-          color: Colors.black,
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 30),
+          child: PinCodeTextField(
+            appContext: context,
+            length: 6,
+            controller: _codeController,
+            keyboardType: TextInputType.number,
+            animationType: AnimationType.none,
+            textStyle: const TextStyle(
+              fontSize: 18,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
+            ),
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            pinTheme: PinTheme(
+              shape: PinCodeFieldShape.box,
+              borderRadius: BorderRadius.circular(0),
+              fieldHeight: 48,
+              fieldWidth: 48,
+              activeBorderWidth: 2,
+              selectedBorderWidth: 2,
+              inactiveBorderWidth: 1,
+              activeColor: const Color(0xFF0147D9),
+              selectedColor: const Color(0xFF0147D9),
+              inactiveColor: const Color(0xFFE0E0E0),
+              activeFillColor: Colors.white,
+              selectedFillColor: Colors.white,
+              inactiveFillColor: const Color(0xFFF5F5F5),
+            ),
+            animationDuration: const Duration(milliseconds: 0),
+            backgroundColor: Colors.transparent,
+            enableActiveFill: true,
+            showCursor: false,
+            enablePinAutofill: false,
+            onCompleted: (code) {
+              // Auto-submit when all digits are entered
+              if (code.length == 6) {
+                _handleVerifyCode(code);
+              }
+            },
+            onChanged: (value) {},
+            beforeTextPaste: (text) {
+              // Allow paste if it's 6 digits
+              return text != null && text.length == 6 && int.tryParse(text) != null;
+            },
+          ),
         ),
-        pinTheme: PinTheme(
-          shape: PinCodeFieldShape.box,
-          borderRadius: BorderRadius.circular(12),
-          fieldHeight: 50,
-          fieldWidth: 45,
-          activeBorderWidth: 2,
-          selectedBorderWidth: 2,
-          inactiveBorderWidth: 1.5,
-          activeColor: const Color(0xFF0147D9),
-          selectedColor: const Color(0xFF0147D9),
-          inactiveColor: const Color(0xFFD0D0D0),
-          activeFillColor: Colors.white,
-          selectedFillColor: Colors.white,
-          inactiveFillColor: Colors.white,
-        ),
-        enableActiveFill: true,
-        onCompleted: (code) {
-          // Auto-submit when all digits are entered
-          if (code.length == 6) {
-            _handleVerifyCode(code);
-          }
-        },
-        onChanged: (value) {},
-      ),
+      ],
     );
   }
 
   Widget _buildTimer() {
     if (!_canResend) {
-      return Text(
-        '0:${_secondsRemaining.toString().padLeft(2, '0')}',
-        style: const TextStyle(
-          fontSize: 14,
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF666666),
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            '0:${_secondsRemaining.toString().padLeft(2, '0')}',
+            style: const TextStyle(
+              fontSize: 14,
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF666666),
+            ),
+          ),
         ),
       );
     } else {
-      return TextButton(
-        onPressed: _handleResendCode,
-        child: const Text(
-          'Resend Code',
-          style: TextStyle(
-            fontSize: 14,
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF0147D9),
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: TextButton(
+            onPressed: _handleResendCode,
+            child: const Text(
+              'Resend Code',
+              style: TextStyle(
+                fontSize: 14,
+                fontFamily: 'Poppins',
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0147D9),
+              ),
+            ),
           ),
         ),
       );
@@ -234,6 +261,9 @@ class _CodeVerificationPageState extends ConsumerState<CodeVerificationPage> {
   }
 
   Widget _buildDoneButton(bool isLoading) {
+    // Determine button text based on type
+    final buttonText = widget.type == 'password_reset' ? 'Reset' : 'Done';
+
     return SizedBox(
       width: 200,
       height: 54,
@@ -257,9 +287,9 @@ class _CodeVerificationPageState extends ConsumerState<CodeVerificationPage> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               )
-            : const Text(
-                'Done',
-                style: TextStyle(
+            : Text(
+                buttonText,
+                style: const TextStyle(
                   fontSize: 18,
                   fontFamily: 'Poppins',
                   fontWeight: FontWeight.w600,

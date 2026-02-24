@@ -9,8 +9,8 @@ class ApiEndpoints {
   static const String signup = '/user/sign_up';  // RN uses /user/sign_up with underscore
   static const String refreshToken = '/auth/refresh';
   static const String logout = '/auth/logout';
-  static const String forgotPassword = '/user/forgot_password';
-  static const String resetPassword = '/user/reset_password';
+  static const String forgotPassword = '/user/changePass_request';  // RN uses /user/changePass_request
+  static const String resetPassword = '/user/change_password';  // RN uses /user/change_password for password reset
   static const String verifyCode = '/user/verify';  // RN uses /user/verify
   static const String changePassword = '/self/change_password';
   static const String verifyEmail = '/auth/verify-email';

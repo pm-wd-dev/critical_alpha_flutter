@@ -53,10 +53,12 @@ class AuthController extends StateNotifier<AuthState> {
             );
           },
           failure: (error) {
-            // If server request fails, use stored user
+            // If server request fails, clear auth state
+            // This could mean token is expired or invalid
+            _authRepository.clearStoredData();
             state = state.copyWith(
-              user: storedUser,
-              isAuthenticated: true,
+              user: null,
+              isAuthenticated: false,
               isLoading: false,
               error: null,
             );
@@ -319,6 +321,18 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
+  // Clear auth state without making API calls
+  // Used when we want to ensure unauthenticated state (e.g., forgot password flow)
+  void clearAuthState() {
+    state = const AuthState(
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      message: null,
+    );
+  }
+
   // Logout
   Future<void> logout({bool logoutFromAllDevices = false}) async {
     state = state.copyWith(isLoading: true, error: null, message: null);
@@ -326,21 +340,24 @@ class AuthController extends StateNotifier<AuthState> {
     final request = LogoutRequest(logoutFromAllDevices: logoutFromAllDevices);
     final result = await _authRepository.logout(request);
 
+    // Always clear auth state completely regardless of server response
+    state = const AuthState(
+      user: null,  // Explicitly set user to null
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      message: null,
+    );
+
+    // Clear any cached data
+    await _authRepository.clearStoredData();
+
     result.when(
       success: (_) {
-        state = const AuthState(
-          isAuthenticated: false,
-          isLoading: false,
-          message: 'Logged out successfully',
-        );
+        // State already cleared above
       },
       failure: (error) {
-        // Even if logout fails on server, clear local state
-        state = AuthState(
-          isAuthenticated: false,
-          isLoading: false,
-          error: error,
-        );
+        // Even if logout fails on server, state is already cleared
       },
     );
   }

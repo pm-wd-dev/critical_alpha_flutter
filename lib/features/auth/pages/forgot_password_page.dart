@@ -4,12 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/widgets/custom_button.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../routes/route_constants.dart';
 import '../controllers/auth_controller.dart';
 import '../models/auth_simple_models.dart';
 import '../models/auth_request_models.dart';
-import '../widgets/auth_header.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -30,6 +29,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         validators: [Validators.required, Validators.email],
       ),
     });
+
+    // Ensure we're in an unauthenticated state for forgot password flow
+    // This prevents any cached auth state from interfering
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authControllerProvider.notifier).clearAuthState();
+    });
   }
 
   @override
@@ -43,13 +48,15 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
       if (next.message != null && next.message!.isNotEmpty) {
         _showSuccess(next.message!);
-        // Navigate to verification page
-        context.push('${RouteConstants.codeVerification}?email=${form.control('email').value}&type=password_reset');
+        // Navigate to verification page using go instead of push to replace the current screen
+        // This prevents issues with authentication redirects
+        final email = form.control('email').value as String;
+        context.go('${RouteConstants.codeVerification}?email=${Uri.encodeComponent(email)}&type=password_reset');
       }
     });
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -61,9 +68,36 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              const AuthHeader(
-                title: 'Forgot Password?',
-                subtitle: 'Enter your email address and we\'ll send you a reset code',
+              Center(
+                child: Image.asset(
+                  AppAssets.logo,
+                  height: 150,
+                  width: 200,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 40),
+              const Text(
+                'FORGOT PASSWORD',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                  color: Color(0xFF1F1F1F),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Provide your account\'s email for\nwhich you want to reset your\npassword',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Poppins',
+                  color: Color(0xFF666666),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               _buildEmailForm(),
@@ -81,37 +115,126 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   Widget _buildEmailForm() {
     return ReactiveForm(
       formGroup: form,
-      child: ReactiveTextField(
-        formControlName: 'email',
-        decoration: const InputDecoration(
-          labelText: AppStrings.email,
-          hintText: 'Enter your email address',
-          prefixIcon: Icon(Icons.email_outlined),
-        ),
-        keyboardType: TextInputType.emailAddress,
-        textInputAction: TextInputAction.done,
-        onSubmitted: (control) => _handleSendReset(),
-        validationMessages: {
-          ValidationMessage.required: (_) => AppStrings.errorRequiredField,
-          ValidationMessage.email: (_) => AppStrings.errorInvalidEmail,
-        },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Email ID',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+              color: Color(0xFF1F1F1F),
+            ),
+          ),
+          const SizedBox(height: 8),
+          ReactiveTextField(
+            formControlName: 'email',
+            decoration: InputDecoration(
+              hintText: 'Enter your email',
+              hintStyle: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                fontFamily: 'Poppins',
+                color: Colors.grey[400],
+              ),
+              filled: true,
+              fillColor: const Color(0xFFF8F8F8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0147D9),
+                  width: 1.5,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Colors.red,
+                  width: 1,
+                ),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Colors.red,
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
+            ),
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (control) => _handleSendReset(),
+            validationMessages: {
+              ValidationMessage.required: (_) => 'Please enter your email',
+              ValidationMessage.email: (_) => 'Please enter a valid email',
+            },
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSendButton(bool isLoading) {
-    return PrimaryButton(
-      text: 'Send Reset Code',
-      isLoading: isLoading,
-      isFullWidth: true,
-      onPressed: isLoading ? null : _handleSendReset,
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _handleSendReset,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF0147D9),
+          disabledBackgroundColor: const Color(0xFF0147D9).withValues(alpha: 0.6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0,
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Text(
+                'Reset',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+      ),
     );
   }
 
   Widget _buildBackToLoginLink() {
     return TextButton(
       onPressed: () => context.pop(),
-      child: const Text('Back to Login'),
+      child: const Text(
+        'Cancel',
+        style: TextStyle(
+          fontSize: 16,
+          fontFamily: 'Poppins',
+          fontWeight: FontWeight.w500,
+          color: Color(0xFF0147D9),
+        ),
+      ),
     );
   }
 

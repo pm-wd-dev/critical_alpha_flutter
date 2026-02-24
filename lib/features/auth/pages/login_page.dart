@@ -19,7 +19,6 @@ class LoginPage extends ConsumerStatefulWidget {
 
 class _LoginPageState extends ConsumerState<LoginPage> {
   late final FormGroup form;
-  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -60,11 +59,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     ref.listen(authControllerProvider, (previous, next) {
       if (next.error != null) {
-        _showError(next.error!.message);
+        _showErrorSnackBar(
+          title: 'Login Failed',
+          message: next.error!.message,
+        );
       }
 
       if (next.isAuthenticated) {
-        context.go(RouteConstants.home);
+        _showSuccessSnackBar(
+          title: 'Login Successful',
+          message: 'Welcome back!',
+        );
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) context.go(RouteConstants.home);
+        });
       }
     });
 
@@ -73,15 +81,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 const SizedBox(height: 60),
                 // Logo
                 _buildLogo(),
-               
-               
                 const SizedBox(height: 50),
                 // Login Title
                 _buildLoginTitle(),
@@ -110,12 +116,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
+
   Widget _buildLogo() {
-    return Image.asset(
-      AppAssets.logo,
-      height: 100,
-      width: 140,
-      fit: BoxFit.contain,
+    return Padding(
+      padding: const EdgeInsets.only(left: 0),
+      child: Image.asset(
+        AppAssets.logo,
+        height: 120,
+        width: 160,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+      ),
     );
   }
 
@@ -236,7 +247,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const SizedBox(height: 8),
               ReactiveTextField(
                 formControlName: 'password',
-                obscureText: _obscurePassword,
+                obscureText: true,
                 decoration: InputDecoration(
                   hintText: 'Enter Your Password',
                   hintStyle: TextStyle(
@@ -279,18 +290,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 16,
-                  ),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.grey[600],
-                      size: 20,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
                   ),
                 ),
                 textInputAction: TextInputAction.done,
@@ -417,36 +416,99 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       password: password,
     );
 
-    final success = await ref.read(authControllerProvider.notifier).login(request);
-
-    if (success) {
-      if (mounted) {
-        _showSuccess('Login successful!');
-      }
-    }
+    await ref.read(authControllerProvider.notifier).login(request);
   }
 
-  void _showError(String message) {
+  void _showErrorSnackBar({required String title, required String message}) {
     if (!mounted) return;
 
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Colors.white,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFE74C3C),
         behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height - 150,
+          left: 20,
+          right: 20,
+        ),
+        duration: const Duration(seconds: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
 
-  void _showSuccess(String message) {
+  void _showSuccessSnackBar({required String title, required String message}) {
     if (!mounted) return;
 
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: Colors.white,
+                fontFamily: 'Poppins',
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF4CAF50),
         behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).size.height - 150,
+          left: 20,
+          right: 20,
+        ),
+        duration: const Duration(seconds: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
+
 }

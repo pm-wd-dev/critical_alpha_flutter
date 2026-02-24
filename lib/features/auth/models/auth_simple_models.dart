@@ -87,21 +87,33 @@ class VerifyCodeRequest {
 }
 
 class ResetPasswordRequest {
-  final String token;
+  final String? token;
+  final String? email;
   final String newPassword;
   final String confirmPassword;
 
   const ResetPasswordRequest({
-    required this.token,
+    this.token,
+    this.email,
     required this.newPassword,
     required this.confirmPassword,
   });
 
-  Map<String, dynamic> toJson() => {
-    'token': token,
-    'newPassword': newPassword,
-    'confirmPassword': confirmPassword,
-  };
+  Map<String, dynamic> toJson() {
+    // For forgot password flow, use email and password like React Native
+    if (email != null) {
+      return {
+        'email': email,
+        'password': newPassword,  // React Native uses 'password' field
+      };
+    }
+    // For other password reset flows
+    return {
+      'token': token,
+      'newPassword': newPassword,
+      'confirmPassword': confirmPassword,
+    };
+  }
 }
 
 class ChangePasswordRequest {

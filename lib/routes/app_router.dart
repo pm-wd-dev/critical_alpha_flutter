@@ -132,8 +132,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: RouteConstants.newPassword,
         name: RouteNames.newPassword,
         builder: (context, state) {
-          final token = state.uri.queryParameters['token'] ?? '';
-          return NewPasswordPage(resetToken: token);
+          final email = state.uri.queryParameters['email'] ?? '';
+          return NewPasswordPage(email: email);
         },
       ),
 

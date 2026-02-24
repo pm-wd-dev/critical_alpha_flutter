@@ -4,20 +4,17 @@ import 'package:go_router/go_router.dart';
 import 'package:reactive_forms/reactive_forms.dart';
 
 import '../../../core/constants/app_constants.dart';
-import '../../../core/utils/validators.dart' as AppValidators;
-import '../../../core/widgets/custom_button.dart';
+import '../../../core/constants/app_assets.dart';
 import '../../../routes/route_constants.dart';
 import '../controllers/auth_controller.dart';
 import '../models/auth_simple_models.dart';
-import '../models/auth_request_models.dart';
-import '../widgets/auth_header.dart';
 
 class NewPasswordPage extends ConsumerStatefulWidget {
-  final String resetToken;
+  final String email;
 
   const NewPasswordPage({
     super.key,
-    required this.resetToken,
+    required this.email,
   });
 
   @override
@@ -48,16 +45,6 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
     });
   }
 
-  Map<String, dynamic>? _passwordMatchValidator(AbstractControl<dynamic> control) {
-    final password = control.value['password'];
-    final confirmPassword = control.value['confirmPassword'];
-
-    if (password != null && confirmPassword != null && password != confirmPassword) {
-      return {'passwordMismatch': true};
-    }
-
-    return null;
-  }
 
   @override
   void dispose() {
@@ -74,8 +61,8 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
         _showError(next.error!.message);
       }
 
-      if (next.message != null && next.message!.isNotEmpty) {
-        _showSuccess(next.message!);
+      if (next.message != null && next.message!.contains('success')) {
+        _showSuccess('Password changed successfully');
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             context.go(RouteConstants.login);
@@ -85,7 +72,7 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -97,9 +84,35 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 40),
-              const AuthHeader(
-                title: 'New Password',
-                subtitle: 'Enter your new password',
+              Center(
+                child: Image.asset(
+                  AppAssets.logo,
+                  height: 150,
+                  width: 200,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 40),
+              const Text(
+                'NEW PASSWORD',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Poppins',
+                  color: Color(0xFF1F1F1F),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Enter your new password',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  fontFamily: 'Poppins',
+                  color: Color(0xFF666666),
+                ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
               _buildPasswordForm(),
@@ -116,17 +129,69 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
     return ReactiveForm(
       formGroup: form,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'New Password',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+              color: Color(0xFF1F1F1F),
+            ),
+          ),
+          const SizedBox(height: 8),
           ReactiveTextField(
             formControlName: 'password',
             obscureText: _obscurePassword,
             decoration: InputDecoration(
-              labelText: 'New Password',
               hintText: 'Enter your new password',
-              prefixIcon: const Icon(Icons.lock_outlined),
+              hintStyle: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                fontFamily: 'Poppins',
+                color: Colors.grey[400],
+              ),
+              filled: true,
+              fillColor: const Color(0xFFF8F8F8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0147D9),
+                  width: 1.5,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Colors.red,
+                  width: 1,
+                ),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Colors.red,
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey[600],
+                  size: 20,
                 ),
                 onPressed: () {
                   setState(() {
@@ -134,26 +199,75 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
                   });
                 },
               ),
-              helperText: 'At least 8 characters with uppercase, lowercase, number, and special character',
-              helperMaxLines: 2,
             ),
             textInputAction: TextInputAction.next,
             validationMessages: {
-              ValidationMessage.required: (_) => AppStrings.errorRequiredField,
+              ValidationMessage.required: (_) => 'Please enter your password',
               ValidationMessage.minLength: (_) => 'Password must be at least 8 characters',
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
+          const Text(
+            'Confirm Password',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              fontFamily: 'Poppins',
+              color: Color(0xFF1F1F1F),
+            ),
+          ),
+          const SizedBox(height: 8),
           ReactiveTextField(
             formControlName: 'confirmPassword',
             obscureText: _obscureConfirmPassword,
             decoration: InputDecoration(
-              labelText: 'Confirm New Password',
               hintText: 'Confirm your new password',
-              prefixIcon: const Icon(Icons.lock_outlined),
+              hintStyle: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                fontFamily: 'Poppins',
+                color: Colors.grey[400],
+              ),
+              filled: true,
+              fillColor: const Color(0xFFF8F8F8),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0147D9),
+                  width: 1.5,
+                ),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Colors.red,
+                  width: 1,
+                ),
+              ),
+              focusedErrorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: Colors.red,
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 16,
+              ),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                  _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey[600],
+                  size: 20,
                 ),
                 onPressed: () {
                   setState(() {
@@ -165,22 +279,25 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
             textInputAction: TextInputAction.done,
             onSubmitted: (control) => _handleResetPassword(),
             validationMessages: {
-              ValidationMessage.required: (_) => AppStrings.errorRequiredField,
+              ValidationMessage.required: (_) => 'Please confirm your password',
             },
           ),
           const SizedBox(height: 16),
           ReactiveFormConsumer(
             builder: (context, form, child) {
-              if (form.hasError('passwordMismatch')) {
-                return Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 16),
-                    child: Text(
-                      AppStrings.errorPasswordMismatch,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.error,
-                      ),
+              final password = form.control('password').value as String?;
+              final confirmPassword = form.control('confirmPassword').value as String?;
+              if (confirmPassword != null && confirmPassword.isNotEmpty &&
+                  password != null && password.isNotEmpty &&
+                  password != confirmPassword) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Text(
+                    'Passwords do not match',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.red,
+                      fontFamily: 'Poppins',
                     ),
                   ),
                 );
@@ -194,11 +311,38 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
   }
 
   Widget _buildResetButton(bool isLoading) {
-    return PrimaryButton(
-      text: 'Reset Password',
-      isLoading: isLoading,
-      isFullWidth: true,
-      onPressed: isLoading ? null : _handleResetPassword,
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : _handleResetPassword,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF0147D9),
+          disabledBackgroundColor: const Color(0xFF0147D9).withValues(alpha: 0.6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 0,
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : const Text(
+                'Reset Password',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+      ),
     );
   }
 
@@ -211,8 +355,13 @@ class _NewPasswordPageState extends ConsumerState<NewPasswordPage> {
     final password = form.control('password').value as String;
     final confirmPassword = form.control('confirmPassword').value as String;
 
+    if (password != confirmPassword) {
+      _showError('Password and Confirm Password are not same');
+      return;
+    }
+
     final request = ResetPasswordRequest(
-      token: widget.resetToken,
+      email: widget.email,
       newPassword: password,
       confirmPassword: confirmPassword,
     );

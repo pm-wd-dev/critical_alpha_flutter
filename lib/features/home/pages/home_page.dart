@@ -228,16 +228,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                         profilePicture,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) =>
-                            const Icon(
-                          Icons.person,
-                          size: 40,
-                          color: Colors.white,
+                            Image.asset(
+                          'assets/images/emptyProfile.jpeg',
+                          fit: BoxFit.cover,
                         ),
                       )
-                    : const Icon(
-                        Icons.person,
-                        size: 40,
-                        color: Colors.white,
+                    : Image.asset(
+                        'assets/images/emptyProfile.jpeg',
+                        fit: BoxFit.cover,
                       ),
               ),
             ),
@@ -320,7 +318,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               child: _buildActionCard(
                 context: context,
                 title: 'My Plans',
-                icon: Icons.checklist_rounded,
+                imageAsset: 'assets/images/pdcaicon.png',
                 iconColor: const Color(0xFF0147D9),
                 onTap: () => context.go(RouteConstants.goals),
               ),
@@ -396,8 +394,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 if (title == 'Member Audios')
                   Positioned(
-                    top: -8,
-                    right: -8,
+                    top: -20,
+                    right: -20,
                     child: Container(
                       width: 24,
                       height: 24,

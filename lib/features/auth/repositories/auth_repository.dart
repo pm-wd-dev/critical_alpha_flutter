@@ -162,14 +162,15 @@ class AuthRepositoryImpl implements AuthRepository {
           message: responseData['message'] ?? 'Account created successfully',
         );
 
-        // Only store tokens if they exist
-        if (token != null && token.isNotEmpty) {
-          await storeTokens(
-            authResponse.tokens.accessToken,
-            authResponse.tokens.refreshToken,
-          );
-          await storeUser(authResponse.user);
-        }
+        // Don't store tokens for signup - user needs to verify email first
+        // Tokens will be stored after successful email verification
+        // if (token != null && token.isNotEmpty) {
+        //   await storeTokens(
+        //     authResponse.tokens.accessToken,
+        //     authResponse.tokens.refreshToken,
+        //   );
+        //   await storeUser(authResponse.user);
+        // }
 
         return Result.success(authResponse);
       } else {
@@ -359,13 +360,24 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Result<void>> resendVerificationCode(String email, String type) async {
     try {
-      await _apiClient.post(
-        ApiEndpoints.resendVerification,
-        data: {
-          'email': email,
-          'type': type,
-        },
-      );
+      // For password reset, use the forgot password endpoint to resend code
+      if (type == 'password_reset') {
+        await _apiClient.post(
+          ApiEndpoints.forgotPassword,  // Use /user/changePass_request for password reset
+          data: {
+            'email': email,
+          },
+        );
+      } else {
+        // For other verification types, use the resend endpoint
+        await _apiClient.post(
+          ApiEndpoints.resendVerification,
+          data: {
+            'email': email,
+            'type': type,
+          },
+        );
+      }
 
       return Result.success(null);
     } on AppException catch (e) {
