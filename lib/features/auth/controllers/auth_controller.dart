@@ -37,14 +37,21 @@ class AuthController extends StateNotifier<AuthState> {
       final storedToken = await _authRepository.getStoredToken();
 
       if (storedUser != null && storedToken != null) {
-        // Set loading only when making network request
-        state = state.copyWith(isLoading: true, error: null);
+        // First, set authenticated with stored user data
+        // This ensures user stays logged in during hot reload
+        state = state.copyWith(
+          user: storedUser,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        );
 
-        // Try to get fresh user data from server
+        // Then try to get fresh user data from server in background
         final result = await _authRepository.getCurrentUser();
 
         result.when(
           success: (user) {
+            // Update with fresh user data
             state = state.copyWith(
               user: user,
               isAuthenticated: true,
@@ -53,15 +60,18 @@ class AuthController extends StateNotifier<AuthState> {
             );
           },
           failure: (error) {
-            // If server request fails, clear auth state
-            // This could mean token is expired or invalid
-            _authRepository.clearStoredData();
-            state = state.copyWith(
-              user: null,
-              isAuthenticated: false,
-              isLoading: false,
-              error: null,
-            );
+            // Only clear auth if it's a 401 unauthorized error
+            // For other errors (network, etc), keep user logged in with cached data
+            if (error.message.contains('401') || error.message.contains('Unauthorized')) {
+              _authRepository.clearStoredData();
+              state = state.copyWith(
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+                error: null,
+              );
+            }
+            // Otherwise keep the user logged in with cached data
           },
         );
       } else {

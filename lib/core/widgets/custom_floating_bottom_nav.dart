@@ -30,6 +30,10 @@ class CustomFloatingBottomNav extends ConsumerWidget {
       height: 60,
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
@@ -46,8 +50,7 @@ class CustomFloatingBottomNav extends ConsumerWidget {
             // Home Tab
             _buildNavItem(
               context: context,
-              activeIcon: Icons.home,
-              inactiveIcon: Icons.home_outlined,
+              iconPath: 'assets/icons/home.png',
               label: 'Home',
               isActive: currentIndex == 0,
               onTap: () => context.go('/home'),
@@ -76,8 +79,7 @@ class CustomFloatingBottomNav extends ConsumerWidget {
 
   Widget _buildNavItem({
     required BuildContext context,
-    required IconData activeIcon,
-    required IconData inactiveIcon,
+    required String iconPath,
     required String label,
     required bool isActive,
     required VoidCallback onTap,
@@ -102,10 +104,11 @@ class CustomFloatingBottomNav extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  isActive ? activeIcon : inactiveIcon,
-                  color: isActive ? Colors.white : const Color(0xFF9CA3AF),
-                  size: 22,
+                Image.asset(
+                  iconPath,
+                  color: isActive ? Colors.white : Colors.blue,
+                  width: 22,
+                  height: 22,
                 ),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
@@ -159,41 +162,11 @@ class CustomFloatingBottomNav extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Clipboard with plus icon
-                SizedBox(
+                Image.asset(
+                  'assets/icons/goals.png',
+                  color: isActive ? Colors.white : Colors.blue,
                   width: 22,
                   height: 22,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Icon(
-                        isActive ? Icons.assignment : Icons.assignment_outlined,
-                        color: isActive ? Colors.white : const Color(0xFF9CA3AF),
-                        size: 22,
-                      ),
-                      Positioned(
-                        right: -2,
-                        bottom: -2,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: isActive ? Colors.white : const Color(0xFF9CA3AF),
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isActive ? const Color(0xFF0147D9) : Colors.white,
-                              width: 1.2,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.add,
-                            color: isActive ? const Color(0xFF0147D9) : Colors.white,
-                            size: 7,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
                 AnimatedSize(
                   duration: const Duration(milliseconds: 300),
@@ -249,11 +222,11 @@ class CustomFloatingBottomNav extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Clipboard with check icon
-                  Icon(
-                    isActive ? Icons.assignment_turned_in : Icons.assignment_turned_in_outlined,
-                    color: isActive ? Colors.white : const Color(0xFF9CA3AF),
-                    size: 22,
+                  Image.asset(
+                    'assets/icons/results.png',
+                    color: isActive ? Colors.white : Colors.blue,
+                    width: 22,
+                    height: 22,
                   ),
                   AnimatedSize(
                     duration: const Duration(milliseconds: 300),

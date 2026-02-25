@@ -9,11 +9,11 @@ class SubscriptionPlanModel with _$SubscriptionPlanModel {
     required String id,
     required String name,
     required String description,
-    required SubscriptionType type,
+    @Default(SubscriptionType.premium) SubscriptionType type,
     required double price,
     required String currency,
     required BillingPeriod billingPeriod,
-    List<FeatureModel>? features,
+    @Default([]) List<FeatureModel> features,
     List<String>? limitations,
     @Default(false) bool isPopular,
     @Default(false) bool isRecommended,
@@ -25,8 +25,8 @@ class SubscriptionPlanModel with _$SubscriptionPlanModel {
     @JsonKey(name: 'platform_product_id') String? platformProductId,
     @JsonKey(name: 'google_product_id') String? googleProductId,
     @JsonKey(name: 'apple_product_id') String? appleProductId,
-    @JsonKey(name: 'created_at') required DateTime createdAt,
-    @JsonKey(name: 'updated_at') required DateTime updatedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     Map<String, dynamic>? metadata,
   }) = _SubscriptionPlanModel;
 
@@ -202,8 +202,8 @@ class UserSubscriptionModel with _$UserSubscriptionModel {
     required String userId,
     required String planId,
     required SubscriptionStatus status,
-    @JsonKey(name: 'started_at') required DateTime startedAt,
-    @JsonKey(name: 'expires_at') DateTime? expiresAt,
+    @JsonKey(name: 'started_at') DateTime? startDate,
+    @JsonKey(name: 'expires_at') DateTime? endDate,
     @JsonKey(name: 'cancelled_at') DateTime? cancelledAt,
     @JsonKey(name: 'trial_ends_at') DateTime? trialEndsAt,
     @JsonKey(name: 'next_billing_date') DateTime? nextBillingDate,
@@ -214,9 +214,11 @@ class UserSubscriptionModel with _$UserSubscriptionModel {
     @JsonKey(name: 'payment_method') PaymentMethodModel? paymentMethod,
     SubscriptionPlanModel? plan,
     List<PaymentModel>? payments,
-    @JsonKey(name: 'created_at') required DateTime createdAt,
-    @JsonKey(name: 'updated_at') required DateTime updatedAt,
+    @JsonKey(name: 'created_at') DateTime? createdAt,
+    @JsonKey(name: 'updated_at') DateTime? updatedAt,
     Map<String, dynamic>? metadata,
+    @Default(false) bool isActive,
+    @Default(false) bool isTrial,
   }) = _UserSubscriptionModel;
 
   factory UserSubscriptionModel.fromJson(Map<String, dynamic> json) =>
@@ -256,21 +258,21 @@ class UserSubscriptionModel with _$UserSubscriptionModel {
 
   /// Whether subscription is expiring soon (within 7 days)
   bool get isExpiringSoon {
-    if (expiresAt == null) return false;
-    final daysUntilExpiry = expiresAt!.difference(DateTime.now()).inDays;
+    if (endDate == null) return false;
+    final daysUntilExpiry = endDate!.difference(DateTime.now()).inDays;
     return daysUntilExpiry <= 7 && daysUntilExpiry >= 0;
   }
 
   /// Whether subscription has expired
   bool get hasExpired {
-    if (expiresAt == null) return false;
-    return DateTime.now().isAfter(expiresAt!);
+    if (endDate == null) return false;
+    return DateTime.now().isAfter(endDate!);
   }
 
   /// Days until expiry
   int? get daysUntilExpiry {
-    if (expiresAt == null) return null;
-    final days = expiresAt!.difference(DateTime.now()).inDays;
+    if (endDate == null) return null;
+    final days = endDate!.difference(DateTime.now()).inDays;
     return days >= 0 ? days : 0;
   }
 
@@ -281,7 +283,7 @@ class UserSubscriptionModel with _$UserSubscriptionModel {
   }
 
   /// Subscription duration so far
-  Duration get duration => DateTime.now().difference(startedAt);
+  Duration get duration => startDate != null ? DateTime.now().difference(startDate!) : Duration.zero;
 
   /// Days since subscription started
   int get daysSinceStart => duration.inDays;
@@ -300,8 +302,8 @@ class UserSubscriptionModel with _$UserSubscriptionModel {
 
   /// Formatted expiry date
   String? get formattedExpiryDate {
-    if (expiresAt == null) return null;
-    return '${expiresAt!.day}/${expiresAt!.month}/${expiresAt!.year}';
+    if (endDate == null) return null;
+    return '${endDate!.day}/${endDate!.month}/${endDate!.year}';
   }
 
   /// Status display text

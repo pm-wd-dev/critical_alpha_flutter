@@ -17,7 +17,7 @@ import '../features/results/pages/results_screen.dart';
 import '../features/results/pages/result_line_chart_page.dart';
 import '../features/results/pages/result_radar_chart_page.dart';
 import '../features/audio/pages/audio_section_page.dart';
-import '../features/audio/pages/soft_skill_page.dart';
+import '../features/audio/pages/audio_tracks_page.dart';
 import '../features/audio/pages/music_player_page.dart';
 import '../features/settings/pages/settings_page.dart';
 import '../features/profile/pages/profile_page.dart';
@@ -25,7 +25,7 @@ import '../features/profile/pages/change_name_page.dart';
 import '../features/profile/pages/change_email_page.dart';
 import '../features/profile/pages/change_password_page.dart';
 import '../features/profile/pages/change_picture_page.dart';
-import '../features/purchase/pages/purchase_page.dart';
+import '../features/purchase/pages/critical_alpha_purchase_page.dart';
 import '../features/plans/pages/plan_detail_page.dart';
 import '../features/assessment/pages/assessment_page.dart' as plan_assessment;
 import '../features/assessment/pages/assessment_complete_page.dart';
@@ -72,24 +72,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Check if current path is a public route (including with query parameters)
       bool isPublicRoute = publicRoutes.any((route) => currentPath.startsWith(route));
 
+      // Always show splash first on app start to properly check auth
+      if (currentPath == '/' || currentPath == '') {
+        return RouteConstants.splash;
+      }
+
+      // Don't redirect if we're on splash page (let it handle navigation)
+      if (currentPath == RouteConstants.splash) {
+        return null;
+      }
+
       // Don't redirect if we're on a public route (like OTP verification)
       if (isPublicRoute) {
         return null;
       }
 
-      // Show splash while initializing only on app start
-      if (isInitializing && currentPath == '/') {
-        return RouteConstants.splash;
-      }
-
       // If user is not logged in and trying to access protected route
       if (!isLoggedIn && !isPublicRoute) {
         return RouteConstants.login;
-      }
-
-      // If user is logged in and on splash/root, go to home
-      if (isLoggedIn && (currentPath == RouteConstants.splash || currentPath == '/')) {
-        return RouteConstants.home;
       }
 
       // No redirect needed
@@ -204,17 +204,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const AudioSectionPage(),
             routes: [
               GoRoute(
-                path: 'soft-skills',
-                name: RouteNames.softSkills,
-                builder: (context, state) => const SoftSkillPage(),
+                path: 'tracks/:categoryId',
+                name: RouteNames.audioTracks,
+                builder: (context, state) {
+                  final categoryId = state.pathParameters['categoryId'] ?? '';
+                  return AudioTracksPage(categoryId: categoryId);
+                },
               ),
               GoRoute(
                 path: 'player',
                 name: RouteNames.musicPlayer,
-                builder: (context, state) {
-                  final trackId = state.uri.queryParameters['trackId'] ?? '';
-                  return MusicPlayerPage(trackId: trackId);
-                },
+                builder: (context, state) => const MusicPlayerPage(),
               ),
             ],
           ),
@@ -260,7 +260,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteConstants.purchase,
         name: RouteNames.purchase,
-        builder: (context, state) => const PurchasePage(),
+        builder: (context, state) => const CriticalAlphaPurchasePage(),
       ),
 
       // Plan Detail Route

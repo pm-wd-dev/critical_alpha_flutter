@@ -12,13 +12,15 @@ _$SubscriptionPlanModelImpl _$$SubscriptionPlanModelImplFromJson(
       id: json['id'] as String,
       name: json['name'] as String,
       description: json['description'] as String,
-      type: $enumDecode(_$SubscriptionTypeEnumMap, json['type']),
+      type: $enumDecodeNullable(_$SubscriptionTypeEnumMap, json['type']) ??
+          SubscriptionType.premium,
       price: (json['price'] as num).toDouble(),
       currency: json['currency'] as String,
       billingPeriod: $enumDecode(_$BillingPeriodEnumMap, json['billingPeriod']),
       features: (json['features'] as List<dynamic>?)
-          ?.map((e) => FeatureModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
+              ?.map((e) => FeatureModel.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
       limitations: (json['limitations'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
@@ -32,8 +34,12 @@ _$SubscriptionPlanModelImpl _$$SubscriptionPlanModelImplFromJson(
       platformProductId: json['platform_product_id'] as String?,
       googleProductId: json['google_product_id'] as String?,
       appleProductId: json['apple_product_id'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: json['createdAt'] == null
+          ? null
+          : DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] == null
+          ? null
+          : DateTime.parse(json['updatedAt'] as String),
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
 
@@ -59,8 +65,8 @@ Map<String, dynamic> _$$SubscriptionPlanModelImplToJson(
       'platform_product_id': instance.platformProductId,
       'google_product_id': instance.googleProductId,
       'apple_product_id': instance.appleProductId,
-      'created_at': instance.createdAt.toIso8601String(),
-      'updated_at': instance.updatedAt.toIso8601String(),
+      'createdAt': instance.createdAt?.toIso8601String(),
+      'updatedAt': instance.updatedAt?.toIso8601String(),
       'metadata': instance.metadata,
     };
 
@@ -85,8 +91,10 @@ _$UserSubscriptionModelImpl _$$UserSubscriptionModelImplFromJson(
       userId: json['userId'] as String,
       planId: json['planId'] as String,
       status: $enumDecode(_$SubscriptionStatusEnumMap, json['status']),
-      startedAt: DateTime.parse(json['started_at'] as String),
-      expiresAt: json['expires_at'] == null
+      startDate: json['started_at'] == null
+          ? null
+          : DateTime.parse(json['started_at'] as String),
+      endDate: json['expires_at'] == null
           ? null
           : DateTime.parse(json['expires_at'] as String),
       cancelledAt: json['cancelled_at'] == null
@@ -115,9 +123,15 @@ _$UserSubscriptionModelImpl _$$UserSubscriptionModelImplFromJson(
       payments: (json['payments'] as List<dynamic>?)
           ?.map((e) => PaymentModel.fromJson(e as Map<String, dynamic>))
           .toList(),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: json['created_at'] == null
+          ? null
+          : DateTime.parse(json['created_at'] as String),
+      updatedAt: json['updated_at'] == null
+          ? null
+          : DateTime.parse(json['updated_at'] as String),
       metadata: json['metadata'] as Map<String, dynamic>?,
+      isActive: json['isActive'] as bool? ?? false,
+      isTrial: json['isTrial'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$$UserSubscriptionModelImplToJson(
@@ -127,8 +141,8 @@ Map<String, dynamic> _$$UserSubscriptionModelImplToJson(
       'userId': instance.userId,
       'planId': instance.planId,
       'status': _$SubscriptionStatusEnumMap[instance.status]!,
-      'started_at': instance.startedAt.toIso8601String(),
-      'expires_at': instance.expiresAt?.toIso8601String(),
+      'started_at': instance.startDate?.toIso8601String(),
+      'expires_at': instance.endDate?.toIso8601String(),
       'cancelled_at': instance.cancelledAt?.toIso8601String(),
       'trial_ends_at': instance.trialEndsAt?.toIso8601String(),
       'next_billing_date': instance.nextBillingDate?.toIso8601String(),
@@ -139,9 +153,11 @@ Map<String, dynamic> _$$UserSubscriptionModelImplToJson(
       'payment_method': instance.paymentMethod,
       'plan': instance.plan,
       'payments': instance.payments,
-      'created_at': instance.createdAt.toIso8601String(),
-      'updated_at': instance.updatedAt.toIso8601String(),
+      'created_at': instance.createdAt?.toIso8601String(),
+      'updated_at': instance.updatedAt?.toIso8601String(),
       'metadata': instance.metadata,
+      'isActive': instance.isActive,
+      'isTrial': instance.isTrial,
     };
 
 const _$SubscriptionStatusEnumMap = {

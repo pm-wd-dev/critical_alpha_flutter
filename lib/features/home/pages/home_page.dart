@@ -1,7 +1,14 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_assets.dart';
@@ -11,6 +18,7 @@ import '../../goals/controllers/goals_controller.dart';
 import '../../results/controllers/results_controller.dart';
 import '../controllers/dashboard_controller.dart';
 import '../../../core/widgets/bottom_navigation.dart';
+import '../widgets/alpha_performance_card.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -20,6 +28,8 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  final ScreenshotController _screenshotController = ScreenshotController();
+
   @override
   void initState() {
     super.initState();
@@ -77,10 +87,12 @@ class _HomePageState extends ConsumerState<HomePage> {
       ),
     );
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(
-        child: SingleChildScrollView(
+    return Screenshot(
+      controller: _screenshotController,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5F5F5),
+        body: SafeArea(
+          child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -130,12 +142,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                   const SizedBox(height: 24),
 
                   // Alpha Performance Section - using meter assessment data from API
-                  _buildAlphaPerformance(dashboardState),
+                  const AlphaPerformanceCard(),
                 ],
               ],
             ),
           ),
         ),
+      ),
       ),
     );
   }
@@ -259,27 +272,30 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildSocialIcon(String asset) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () => _shareScreenshot(asset),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            asset,
+            width: 36,
+            height: 36,
+            fit: BoxFit.cover,
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.asset(
-          asset,
-          width: 36,
-          height: 36,
-          fit: BoxFit.cover,
         ),
       ),
     );
@@ -336,7 +352,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   if (isPurchased) {
                     context.go(RouteConstants.audio);
                   } else {
-                    context.go(RouteConstants.purchase);
+                    context.push(RouteConstants.purchase);
                   }
                 },
               ),
@@ -363,12 +379,19 @@ class _HomePageState extends ConsumerState<HomePage> {
         height: 140,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+              spreadRadius: 0,
+            ),
+            BoxShadow(
               color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+              blurRadius: 30,
+              offset: const Offset(0, 15),
+              spreadRadius: -5,
             ),
           ],
         ),
@@ -491,12 +514,19 @@ class _HomePageState extends ConsumerState<HomePage> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+            spreadRadius: -5,
           ),
         ],
       ),
@@ -744,67 +774,103 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Widget _buildNoAssessmentPlaceholder() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: const Color(0xFF0147D9).withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.assessment_outlined,
-              size: 48,
-              color: Color(0xFF0147D9),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'No Assessment Data Yet',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'Poppins',
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Complete your first assessment\nto see your performance metrics',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Poppins',
-              color: Colors.grey[600],
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              // Navigate to assessment
-              context.push('/goals/assessment');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF0147D9),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-            ),
-            child: const Text(
-              'Take Assessment',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ],
-      ),
+    // Show empty state with circular progress indicators at 0%
+    return Column(
+      children: [
+        // Performance Gauges showing 0%
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            _buildPerformanceGauge('Most Recent', 0),
+            _buildPerformanceGauge('Overall', 0),
+          ],
+        ),
+        const SizedBox(height: 32),
+
+        // Performance Categories all at 0
+        _buildPerformanceCategory('Awareness', Icons.lightbulb, 0.0),
+        const SizedBox(height: 16),
+        _buildPerformanceCategory('Learning', Icons.psychology, 0.0),
+        const SizedBox(height: 16),
+        _buildPerformanceCategory('Performance', Icons.trending_up, 0.0),
+        const SizedBox(height: 16),
+        _buildPerformanceCategory('Harnessing', Icons.fitness_center, 0.0),
+        const SizedBox(height: 16),
+        _buildPerformanceCategory('Adaptability', Icons.sync, 0.0),
+      ],
     );
+  }
+
+  Future<void> _shareScreenshot(String socialMediaAsset) async {
+    try {
+      // Show loading indicator
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Capturing screenshot...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+
+      // Capture the screenshot
+      final Uint8List? image = await _screenshotController.capture(
+        delay: const Duration(milliseconds: 100),
+      );
+
+      if (image == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to capture screenshot'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Save the image to a temporary file
+      final Directory tempDir = await getTemporaryDirectory();
+      final String fileName = 'critical_alpha_${DateTime.now().millisecondsSinceEpoch}.png';
+      final File file = File('${tempDir.path}/$fileName');
+      await file.writeAsBytes(image);
+
+      // Share the screenshot
+      String shareText = 'Check out my Critical Alpha performance!';
+
+      // Customize the share text based on the social media platform
+      if (socialMediaAsset.contains('whatsapp')) {
+        shareText = '🚀 Check out my Critical Alpha performance! 💪';
+      } else if (socialMediaAsset.contains('facebook')) {
+        shareText = 'My Critical Alpha performance dashboard! #CriticalAlpha #Performance';
+      } else if (socialMediaAsset.contains('instagram')) {
+        shareText = 'Critical Alpha Performance 📊 #CriticalAlpha #AlphaPerformance #Success';
+      }
+
+      // Share using share_plus
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: shareText,
+      );
+
+      // Clean up the temporary file after a delay
+      Future.delayed(const Duration(seconds: 5), () {
+        if (file.existsSync()) {
+          file.deleteSync();
+        }
+      });
+
+    } catch (e) {
+      debugPrint('Error sharing screenshot: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing screenshot: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

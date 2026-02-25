@@ -5,6 +5,7 @@ import '../../../core/network/api_client.dart';
 import '../../../core/errors/failures.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../goals/models/goal_model.dart';
+import '../../purchase/controllers/purchase_controller.dart';
 import '../models/assessment_model.dart';
 import '../models/dashboard_models.dart';
 import '../models/quick_action_model.dart';
@@ -22,6 +23,7 @@ class HomeState with _$HomeState {
     WeeklyProgressData? weeklyProgress,
     @Default([]) List<QuickActionModel> quickActions,
     String? error,
+    @Default(false) bool isPurchased,
   }) = _HomeState;
 
   const HomeState._();
@@ -39,7 +41,33 @@ class HomeController extends StateNotifier<HomeState> {
   }
 
   Future<void> _initialize() async {
+    // Check subscription status on startup like React Native
+    await _checkSubscriptionStatus();
     await loadDashboardData();
+
+    // Listen for subscription state changes
+    _ref.listen<PurchaseState>(purchaseControllerProvider, (previous, current) {
+      print('Home: Subscription state changed - has active: ${current.hasActiveSubscription}');
+      state = state.copyWith(isPurchased: current.hasActiveSubscription);
+    });
+  }
+
+  Future<void> _checkSubscriptionStatus() async {
+    try {
+      // Initialize purchase controller to auto-restore purchases
+      final purchaseController = _ref.read(purchaseControllerProvider.notifier);
+
+      // Wait for purchase restoration to complete
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Check if user has active subscription
+      final purchaseState = _ref.read(purchaseControllerProvider);
+      state = state.copyWith(isPurchased: purchaseState.hasActiveSubscription);
+    } catch (e) {
+      print('Failed to check subscription status: $e');
+      // Continue without subscription - free tier
+      state = state.copyWith(isPurchased: false);
+    }
   }
 
   Future<void> loadDashboardData() async {

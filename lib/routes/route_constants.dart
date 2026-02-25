@@ -19,7 +19,7 @@ class RouteConstants {
   static const String assessment = '/goals/assessment';
   static const String resultLineChart = '/results/line-chart';
   static const String resultRadarChart = '/results/radar-chart';
-  static const String softSkills = '/audio/soft-skills';
+  static const String audioTracks = '/audio/tracks';
   static const String musicPlayer = '/audio/player';
 
   // Full screen routes
@@ -52,7 +52,7 @@ class RouteNames {
   static const String assessment = 'assessment';
   static const String resultLineChart = 'result-line-chart';
   static const String resultRadarChart = 'result-radar-chart';
-  static const String softSkills = 'soft-skills';
+  static const String audioTracks = 'audio-tracks';
   static const String musicPlayer = 'music-player';
 
   // Full screen route names

@@ -1,7 +1,7 @@
 name: critical_alpha
 description: Critical Alpha - Goal tracking and learning platform
 publish_to: 'none'
-version: 1.0.0+1
+version: 2.0.5+46
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -68,7 +68,7 @@ dependencies:
   # PDF and sharing
   pdf: ^3.10.7
   share_plus: ^7.2.1
-  screenshot: ^2.1.0
+  screenshot: ^3.0.0
 
   # Animations
   flutter_animate: ^4.3.0

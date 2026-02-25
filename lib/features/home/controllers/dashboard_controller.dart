@@ -3,6 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_endpoints.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../purchase/controllers/purchase_controller.dart';
 
 part 'dashboard_controller.freezed.dart';
 
@@ -28,6 +29,14 @@ class DashboardController extends StateNotifier<DashboardState> {
     Future.delayed(const Duration(milliseconds: 500), () {
       _loadDashboard();
     });
+
+    // Listen for purchase state changes
+    _ref.listen<PurchaseState>(purchaseControllerProvider, (previous, current) {
+      print('Dashboard: Subscription state changed - has active: ${current.hasActiveSubscription}');
+      if (previous?.hasActiveSubscription != current.hasActiveSubscription) {
+        state = state.copyWith(isPurchased: current.hasActiveSubscription);
+      }
+    });
   }
 
   Future<void> _loadDashboard() async {
@@ -36,6 +45,15 @@ class DashboardController extends StateNotifier<DashboardState> {
 
   Future<void> loadDashboard() async {
     state = state.copyWith(isLoading: true, error: null);
+
+    // Check current purchase state
+    try {
+      final purchaseState = _ref.read(purchaseControllerProvider);
+      state = state.copyWith(isPurchased: purchaseState.hasActiveSubscription);
+      print('📱 Dashboard loaded with purchase state: ${purchaseState.hasActiveSubscription}');
+    } catch (e) {
+      print('⚠️ Could not check purchase state: $e');
+    }
 
     try {
       final token = _apiClient.authToken;

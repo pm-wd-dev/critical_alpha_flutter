@@ -28,7 +28,7 @@ mixin _$SubscriptionPlanModel {
   double get price => throw _privateConstructorUsedError;
   String get currency => throw _privateConstructorUsedError;
   BillingPeriod get billingPeriod => throw _privateConstructorUsedError;
-  List<FeatureModel>? get features => throw _privateConstructorUsedError;
+  List<FeatureModel> get features => throw _privateConstructorUsedError;
   List<String>? get limitations => throw _privateConstructorUsedError;
   bool get isPopular => throw _privateConstructorUsedError;
   bool get isRecommended => throw _privateConstructorUsedError;
@@ -44,10 +44,8 @@ mixin _$SubscriptionPlanModel {
   String? get googleProductId => throw _privateConstructorUsedError;
   @JsonKey(name: 'apple_product_id')
   String? get appleProductId => throw _privateConstructorUsedError;
-  @JsonKey(name: 'created_at')
-  DateTime get createdAt => throw _privateConstructorUsedError;
-  @JsonKey(name: 'updated_at')
-  DateTime get updatedAt => throw _privateConstructorUsedError;
+  DateTime? get createdAt => throw _privateConstructorUsedError;
+  DateTime? get updatedAt => throw _privateConstructorUsedError;
   Map<String, dynamic>? get metadata => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -70,7 +68,7 @@ abstract class $SubscriptionPlanModelCopyWith<$Res> {
       double price,
       String currency,
       BillingPeriod billingPeriod,
-      List<FeatureModel>? features,
+      List<FeatureModel> features,
       List<String>? limitations,
       bool isPopular,
       bool isRecommended,
@@ -82,8 +80,8 @@ abstract class $SubscriptionPlanModelCopyWith<$Res> {
       @JsonKey(name: 'platform_product_id') String? platformProductId,
       @JsonKey(name: 'google_product_id') String? googleProductId,
       @JsonKey(name: 'apple_product_id') String? appleProductId,
-      @JsonKey(name: 'created_at') DateTime createdAt,
-      @JsonKey(name: 'updated_at') DateTime updatedAt,
+      DateTime? createdAt,
+      DateTime? updatedAt,
       Map<String, dynamic>? metadata});
 }
 
@@ -108,7 +106,7 @@ class _$SubscriptionPlanModelCopyWithImpl<$Res,
     Object? price = null,
     Object? currency = null,
     Object? billingPeriod = null,
-    Object? features = freezed,
+    Object? features = null,
     Object? limitations = freezed,
     Object? isPopular = null,
     Object? isRecommended = null,
@@ -120,8 +118,8 @@ class _$SubscriptionPlanModelCopyWithImpl<$Res,
     Object? platformProductId = freezed,
     Object? googleProductId = freezed,
     Object? appleProductId = freezed,
-    Object? createdAt = null,
-    Object? updatedAt = null,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
     Object? metadata = freezed,
   }) {
     return _then(_value.copyWith(
@@ -153,10 +151,10 @@ class _$SubscriptionPlanModelCopyWithImpl<$Res,
           ? _value.billingPeriod
           : billingPeriod // ignore: cast_nullable_to_non_nullable
               as BillingPeriod,
-      features: freezed == features
+      features: null == features
           ? _value.features
           : features // ignore: cast_nullable_to_non_nullable
-              as List<FeatureModel>?,
+              as List<FeatureModel>,
       limitations: freezed == limitations
           ? _value.limitations
           : limitations // ignore: cast_nullable_to_non_nullable
@@ -201,14 +199,14 @@ class _$SubscriptionPlanModelCopyWithImpl<$Res,
           ? _value.appleProductId
           : appleProductId // ignore: cast_nullable_to_non_nullable
               as String?,
-      createdAt: null == createdAt
+      createdAt: freezed == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: null == updatedAt
+              as DateTime?,
+      updatedAt: freezed == updatedAt
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       metadata: freezed == metadata
           ? _value.metadata
           : metadata // ignore: cast_nullable_to_non_nullable
@@ -234,7 +232,7 @@ abstract class _$$SubscriptionPlanModelImplCopyWith<$Res>
       double price,
       String currency,
       BillingPeriod billingPeriod,
-      List<FeatureModel>? features,
+      List<FeatureModel> features,
       List<String>? limitations,
       bool isPopular,
       bool isRecommended,
@@ -246,8 +244,8 @@ abstract class _$$SubscriptionPlanModelImplCopyWith<$Res>
       @JsonKey(name: 'platform_product_id') String? platformProductId,
       @JsonKey(name: 'google_product_id') String? googleProductId,
       @JsonKey(name: 'apple_product_id') String? appleProductId,
-      @JsonKey(name: 'created_at') DateTime createdAt,
-      @JsonKey(name: 'updated_at') DateTime updatedAt,
+      DateTime? createdAt,
+      DateTime? updatedAt,
       Map<String, dynamic>? metadata});
 }
 
@@ -270,7 +268,7 @@ class __$$SubscriptionPlanModelImplCopyWithImpl<$Res>
     Object? price = null,
     Object? currency = null,
     Object? billingPeriod = null,
-    Object? features = freezed,
+    Object? features = null,
     Object? limitations = freezed,
     Object? isPopular = null,
     Object? isRecommended = null,
@@ -282,8 +280,8 @@ class __$$SubscriptionPlanModelImplCopyWithImpl<$Res>
     Object? platformProductId = freezed,
     Object? googleProductId = freezed,
     Object? appleProductId = freezed,
-    Object? createdAt = null,
-    Object? updatedAt = null,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
     Object? metadata = freezed,
   }) {
     return _then(_$SubscriptionPlanModelImpl(
@@ -315,10 +313,10 @@ class __$$SubscriptionPlanModelImplCopyWithImpl<$Res>
           ? _value.billingPeriod
           : billingPeriod // ignore: cast_nullable_to_non_nullable
               as BillingPeriod,
-      features: freezed == features
+      features: null == features
           ? _value._features
           : features // ignore: cast_nullable_to_non_nullable
-              as List<FeatureModel>?,
+              as List<FeatureModel>,
       limitations: freezed == limitations
           ? _value._limitations
           : limitations // ignore: cast_nullable_to_non_nullable
@@ -363,14 +361,14 @@ class __$$SubscriptionPlanModelImplCopyWithImpl<$Res>
           ? _value.appleProductId
           : appleProductId // ignore: cast_nullable_to_non_nullable
               as String?,
-      createdAt: null == createdAt
+      createdAt: freezed == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: null == updatedAt
+              as DateTime?,
+      updatedAt: freezed == updatedAt
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       metadata: freezed == metadata
           ? _value._metadata
           : metadata // ignore: cast_nullable_to_non_nullable
@@ -386,11 +384,11 @@ class _$SubscriptionPlanModelImpl extends _SubscriptionPlanModel {
       {required this.id,
       required this.name,
       required this.description,
-      required this.type,
+      this.type = SubscriptionType.premium,
       required this.price,
       required this.currency,
       required this.billingPeriod,
-      final List<FeatureModel>? features,
+      final List<FeatureModel> features = const [],
       final List<String>? limitations,
       this.isPopular = false,
       this.isRecommended = false,
@@ -402,8 +400,8 @@ class _$SubscriptionPlanModelImpl extends _SubscriptionPlanModel {
       @JsonKey(name: 'platform_product_id') this.platformProductId,
       @JsonKey(name: 'google_product_id') this.googleProductId,
       @JsonKey(name: 'apple_product_id') this.appleProductId,
-      @JsonKey(name: 'created_at') required this.createdAt,
-      @JsonKey(name: 'updated_at') required this.updatedAt,
+      this.createdAt,
+      this.updatedAt,
       final Map<String, dynamic>? metadata})
       : _features = features,
         _limitations = limitations,
@@ -420,6 +418,7 @@ class _$SubscriptionPlanModelImpl extends _SubscriptionPlanModel {
   @override
   final String description;
   @override
+  @JsonKey()
   final SubscriptionType type;
   @override
   final double price;
@@ -427,14 +426,13 @@ class _$SubscriptionPlanModelImpl extends _SubscriptionPlanModel {
   final String currency;
   @override
   final BillingPeriod billingPeriod;
-  final List<FeatureModel>? _features;
+  final List<FeatureModel> _features;
   @override
-  List<FeatureModel>? get features {
-    final value = _features;
-    if (value == null) return null;
+  @JsonKey()
+  List<FeatureModel> get features {
     if (_features is EqualUnmodifiableListView) return _features;
     // ignore: implicit_dynamic_type
-    return EqualUnmodifiableListView(value);
+    return EqualUnmodifiableListView(_features);
   }
 
   final List<String>? _limitations;
@@ -475,11 +473,9 @@ class _$SubscriptionPlanModelImpl extends _SubscriptionPlanModel {
   @JsonKey(name: 'apple_product_id')
   final String? appleProductId;
   @override
-  @JsonKey(name: 'created_at')
-  final DateTime createdAt;
+  final DateTime? createdAt;
   @override
-  @JsonKey(name: 'updated_at')
-  final DateTime updatedAt;
+  final DateTime? updatedAt;
   final Map<String, dynamic>? _metadata;
   @override
   Map<String, dynamic>? get metadata {
@@ -588,11 +584,11 @@ abstract class _SubscriptionPlanModel extends SubscriptionPlanModel {
       {required final String id,
       required final String name,
       required final String description,
-      required final SubscriptionType type,
+      final SubscriptionType type,
       required final double price,
       required final String currency,
       required final BillingPeriod billingPeriod,
-      final List<FeatureModel>? features,
+      final List<FeatureModel> features,
       final List<String>? limitations,
       final bool isPopular,
       final bool isRecommended,
@@ -604,8 +600,8 @@ abstract class _SubscriptionPlanModel extends SubscriptionPlanModel {
       @JsonKey(name: 'platform_product_id') final String? platformProductId,
       @JsonKey(name: 'google_product_id') final String? googleProductId,
       @JsonKey(name: 'apple_product_id') final String? appleProductId,
-      @JsonKey(name: 'created_at') required final DateTime createdAt,
-      @JsonKey(name: 'updated_at') required final DateTime updatedAt,
+      final DateTime? createdAt,
+      final DateTime? updatedAt,
       final Map<String, dynamic>? metadata}) = _$SubscriptionPlanModelImpl;
   const _SubscriptionPlanModel._() : super._();
 
@@ -627,7 +623,7 @@ abstract class _SubscriptionPlanModel extends SubscriptionPlanModel {
   @override
   BillingPeriod get billingPeriod;
   @override
-  List<FeatureModel>? get features;
+  List<FeatureModel> get features;
   @override
   List<String>? get limitations;
   @override
@@ -655,11 +651,9 @@ abstract class _SubscriptionPlanModel extends SubscriptionPlanModel {
   @JsonKey(name: 'apple_product_id')
   String? get appleProductId;
   @override
-  @JsonKey(name: 'created_at')
-  DateTime get createdAt;
+  DateTime? get createdAt;
   @override
-  @JsonKey(name: 'updated_at')
-  DateTime get updatedAt;
+  DateTime? get updatedAt;
   @override
   Map<String, dynamic>? get metadata;
   @override
@@ -680,9 +674,9 @@ mixin _$UserSubscriptionModel {
   String get planId => throw _privateConstructorUsedError;
   SubscriptionStatus get status => throw _privateConstructorUsedError;
   @JsonKey(name: 'started_at')
-  DateTime get startedAt => throw _privateConstructorUsedError;
+  DateTime? get startDate => throw _privateConstructorUsedError;
   @JsonKey(name: 'expires_at')
-  DateTime? get expiresAt => throw _privateConstructorUsedError;
+  DateTime? get endDate => throw _privateConstructorUsedError;
   @JsonKey(name: 'cancelled_at')
   DateTime? get cancelledAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'trial_ends_at')
@@ -702,10 +696,12 @@ mixin _$UserSubscriptionModel {
   SubscriptionPlanModel? get plan => throw _privateConstructorUsedError;
   List<PaymentModel>? get payments => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
-  DateTime get createdAt => throw _privateConstructorUsedError;
+  DateTime? get createdAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'updated_at')
-  DateTime get updatedAt => throw _privateConstructorUsedError;
+  DateTime? get updatedAt => throw _privateConstructorUsedError;
   Map<String, dynamic>? get metadata => throw _privateConstructorUsedError;
+  bool get isActive => throw _privateConstructorUsedError;
+  bool get isTrial => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -724,8 +720,8 @@ abstract class $UserSubscriptionModelCopyWith<$Res> {
       String userId,
       String planId,
       SubscriptionStatus status,
-      @JsonKey(name: 'started_at') DateTime startedAt,
-      @JsonKey(name: 'expires_at') DateTime? expiresAt,
+      @JsonKey(name: 'started_at') DateTime? startDate,
+      @JsonKey(name: 'expires_at') DateTime? endDate,
       @JsonKey(name: 'cancelled_at') DateTime? cancelledAt,
       @JsonKey(name: 'trial_ends_at') DateTime? trialEndsAt,
       @JsonKey(name: 'next_billing_date') DateTime? nextBillingDate,
@@ -736,9 +732,11 @@ abstract class $UserSubscriptionModelCopyWith<$Res> {
       @JsonKey(name: 'payment_method') PaymentMethodModel? paymentMethod,
       SubscriptionPlanModel? plan,
       List<PaymentModel>? payments,
-      @JsonKey(name: 'created_at') DateTime createdAt,
-      @JsonKey(name: 'updated_at') DateTime updatedAt,
-      Map<String, dynamic>? metadata});
+      @JsonKey(name: 'created_at') DateTime? createdAt,
+      @JsonKey(name: 'updated_at') DateTime? updatedAt,
+      Map<String, dynamic>? metadata,
+      bool isActive,
+      bool isTrial});
 
   $PaymentMethodModelCopyWith<$Res>? get paymentMethod;
   $SubscriptionPlanModelCopyWith<$Res>? get plan;
@@ -762,8 +760,8 @@ class _$UserSubscriptionModelCopyWithImpl<$Res,
     Object? userId = null,
     Object? planId = null,
     Object? status = null,
-    Object? startedAt = null,
-    Object? expiresAt = freezed,
+    Object? startDate = freezed,
+    Object? endDate = freezed,
     Object? cancelledAt = freezed,
     Object? trialEndsAt = freezed,
     Object? nextBillingDate = freezed,
@@ -774,9 +772,11 @@ class _$UserSubscriptionModelCopyWithImpl<$Res,
     Object? paymentMethod = freezed,
     Object? plan = freezed,
     Object? payments = freezed,
-    Object? createdAt = null,
-    Object? updatedAt = null,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
     Object? metadata = freezed,
+    Object? isActive = null,
+    Object? isTrial = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -795,13 +795,13 @@ class _$UserSubscriptionModelCopyWithImpl<$Res,
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as SubscriptionStatus,
-      startedAt: null == startedAt
-          ? _value.startedAt
-          : startedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      expiresAt: freezed == expiresAt
-          ? _value.expiresAt
-          : expiresAt // ignore: cast_nullable_to_non_nullable
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      endDate: freezed == endDate
+          ? _value.endDate
+          : endDate // ignore: cast_nullable_to_non_nullable
               as DateTime?,
       cancelledAt: freezed == cancelledAt
           ? _value.cancelledAt
@@ -843,18 +843,26 @@ class _$UserSubscriptionModelCopyWithImpl<$Res,
           ? _value.payments
           : payments // ignore: cast_nullable_to_non_nullable
               as List<PaymentModel>?,
-      createdAt: null == createdAt
+      createdAt: freezed == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: null == updatedAt
+              as DateTime?,
+      updatedAt: freezed == updatedAt
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       metadata: freezed == metadata
           ? _value.metadata
           : metadata // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>?,
+      isActive: null == isActive
+          ? _value.isActive
+          : isActive // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isTrial: null == isTrial
+          ? _value.isTrial
+          : isTrial // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -897,8 +905,8 @@ abstract class _$$UserSubscriptionModelImplCopyWith<$Res>
       String userId,
       String planId,
       SubscriptionStatus status,
-      @JsonKey(name: 'started_at') DateTime startedAt,
-      @JsonKey(name: 'expires_at') DateTime? expiresAt,
+      @JsonKey(name: 'started_at') DateTime? startDate,
+      @JsonKey(name: 'expires_at') DateTime? endDate,
       @JsonKey(name: 'cancelled_at') DateTime? cancelledAt,
       @JsonKey(name: 'trial_ends_at') DateTime? trialEndsAt,
       @JsonKey(name: 'next_billing_date') DateTime? nextBillingDate,
@@ -909,9 +917,11 @@ abstract class _$$UserSubscriptionModelImplCopyWith<$Res>
       @JsonKey(name: 'payment_method') PaymentMethodModel? paymentMethod,
       SubscriptionPlanModel? plan,
       List<PaymentModel>? payments,
-      @JsonKey(name: 'created_at') DateTime createdAt,
-      @JsonKey(name: 'updated_at') DateTime updatedAt,
-      Map<String, dynamic>? metadata});
+      @JsonKey(name: 'created_at') DateTime? createdAt,
+      @JsonKey(name: 'updated_at') DateTime? updatedAt,
+      Map<String, dynamic>? metadata,
+      bool isActive,
+      bool isTrial});
 
   @override
   $PaymentMethodModelCopyWith<$Res>? get paymentMethod;
@@ -935,8 +945,8 @@ class __$$UserSubscriptionModelImplCopyWithImpl<$Res>
     Object? userId = null,
     Object? planId = null,
     Object? status = null,
-    Object? startedAt = null,
-    Object? expiresAt = freezed,
+    Object? startDate = freezed,
+    Object? endDate = freezed,
     Object? cancelledAt = freezed,
     Object? trialEndsAt = freezed,
     Object? nextBillingDate = freezed,
@@ -947,9 +957,11 @@ class __$$UserSubscriptionModelImplCopyWithImpl<$Res>
     Object? paymentMethod = freezed,
     Object? plan = freezed,
     Object? payments = freezed,
-    Object? createdAt = null,
-    Object? updatedAt = null,
+    Object? createdAt = freezed,
+    Object? updatedAt = freezed,
     Object? metadata = freezed,
+    Object? isActive = null,
+    Object? isTrial = null,
   }) {
     return _then(_$UserSubscriptionModelImpl(
       id: null == id
@@ -968,13 +980,13 @@ class __$$UserSubscriptionModelImplCopyWithImpl<$Res>
           ? _value.status
           : status // ignore: cast_nullable_to_non_nullable
               as SubscriptionStatus,
-      startedAt: null == startedAt
-          ? _value.startedAt
-          : startedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      expiresAt: freezed == expiresAt
-          ? _value.expiresAt
-          : expiresAt // ignore: cast_nullable_to_non_nullable
+      startDate: freezed == startDate
+          ? _value.startDate
+          : startDate // ignore: cast_nullable_to_non_nullable
+              as DateTime?,
+      endDate: freezed == endDate
+          ? _value.endDate
+          : endDate // ignore: cast_nullable_to_non_nullable
               as DateTime?,
       cancelledAt: freezed == cancelledAt
           ? _value.cancelledAt
@@ -1016,18 +1028,26 @@ class __$$UserSubscriptionModelImplCopyWithImpl<$Res>
           ? _value._payments
           : payments // ignore: cast_nullable_to_non_nullable
               as List<PaymentModel>?,
-      createdAt: null == createdAt
+      createdAt: freezed == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
-      updatedAt: null == updatedAt
+              as DateTime?,
+      updatedAt: freezed == updatedAt
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
-              as DateTime,
+              as DateTime?,
       metadata: freezed == metadata
           ? _value._metadata
           : metadata // ignore: cast_nullable_to_non_nullable
               as Map<String, dynamic>?,
+      isActive: null == isActive
+          ? _value.isActive
+          : isActive // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isTrial: null == isTrial
+          ? _value.isTrial
+          : isTrial // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -1040,8 +1060,8 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
       required this.userId,
       required this.planId,
       required this.status,
-      @JsonKey(name: 'started_at') required this.startedAt,
-      @JsonKey(name: 'expires_at') this.expiresAt,
+      @JsonKey(name: 'started_at') this.startDate,
+      @JsonKey(name: 'expires_at') this.endDate,
       @JsonKey(name: 'cancelled_at') this.cancelledAt,
       @JsonKey(name: 'trial_ends_at') this.trialEndsAt,
       @JsonKey(name: 'next_billing_date') this.nextBillingDate,
@@ -1052,9 +1072,11 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
       @JsonKey(name: 'payment_method') this.paymentMethod,
       this.plan,
       final List<PaymentModel>? payments,
-      @JsonKey(name: 'created_at') required this.createdAt,
-      @JsonKey(name: 'updated_at') required this.updatedAt,
-      final Map<String, dynamic>? metadata})
+      @JsonKey(name: 'created_at') this.createdAt,
+      @JsonKey(name: 'updated_at') this.updatedAt,
+      final Map<String, dynamic>? metadata,
+      this.isActive = false,
+      this.isTrial = false})
       : _payments = payments,
         _metadata = metadata,
         super._();
@@ -1072,10 +1094,10 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
   final SubscriptionStatus status;
   @override
   @JsonKey(name: 'started_at')
-  final DateTime startedAt;
+  final DateTime? startDate;
   @override
   @JsonKey(name: 'expires_at')
-  final DateTime? expiresAt;
+  final DateTime? endDate;
   @override
   @JsonKey(name: 'cancelled_at')
   final DateTime? cancelledAt;
@@ -1114,10 +1136,10 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
 
   @override
   @JsonKey(name: 'created_at')
-  final DateTime createdAt;
+  final DateTime? createdAt;
   @override
   @JsonKey(name: 'updated_at')
-  final DateTime updatedAt;
+  final DateTime? updatedAt;
   final Map<String, dynamic>? _metadata;
   @override
   Map<String, dynamic>? get metadata {
@@ -1129,8 +1151,15 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
   }
 
   @override
+  @JsonKey()
+  final bool isActive;
+  @override
+  @JsonKey()
+  final bool isTrial;
+
+  @override
   String toString() {
-    return 'UserSubscriptionModel(id: $id, userId: $userId, planId: $planId, status: $status, startedAt: $startedAt, expiresAt: $expiresAt, cancelledAt: $cancelledAt, trialEndsAt: $trialEndsAt, nextBillingDate: $nextBillingDate, lastPaymentDate: $lastPaymentDate, autoRenew: $autoRenew, platform: $platform, platformSubscriptionId: $platformSubscriptionId, paymentMethod: $paymentMethod, plan: $plan, payments: $payments, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata)';
+    return 'UserSubscriptionModel(id: $id, userId: $userId, planId: $planId, status: $status, startDate: $startDate, endDate: $endDate, cancelledAt: $cancelledAt, trialEndsAt: $trialEndsAt, nextBillingDate: $nextBillingDate, lastPaymentDate: $lastPaymentDate, autoRenew: $autoRenew, platform: $platform, platformSubscriptionId: $platformSubscriptionId, paymentMethod: $paymentMethod, plan: $plan, payments: $payments, createdAt: $createdAt, updatedAt: $updatedAt, metadata: $metadata, isActive: $isActive, isTrial: $isTrial)';
   }
 
   @override
@@ -1142,10 +1171,9 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
             (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.planId, planId) || other.planId == planId) &&
             (identical(other.status, status) || other.status == status) &&
-            (identical(other.startedAt, startedAt) ||
-                other.startedAt == startedAt) &&
-            (identical(other.expiresAt, expiresAt) ||
-                other.expiresAt == expiresAt) &&
+            (identical(other.startDate, startDate) ||
+                other.startDate == startDate) &&
+            (identical(other.endDate, endDate) || other.endDate == endDate) &&
             (identical(other.cancelledAt, cancelledAt) ||
                 other.cancelledAt == cancelledAt) &&
             (identical(other.trialEndsAt, trialEndsAt) ||
@@ -1168,7 +1196,10 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
-            const DeepCollectionEquality().equals(other._metadata, _metadata));
+            const DeepCollectionEquality().equals(other._metadata, _metadata) &&
+            (identical(other.isActive, isActive) ||
+                other.isActive == isActive) &&
+            (identical(other.isTrial, isTrial) || other.isTrial == isTrial));
   }
 
   @JsonKey(ignore: true)
@@ -1179,8 +1210,8 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
         userId,
         planId,
         status,
-        startedAt,
-        expiresAt,
+        startDate,
+        endDate,
         cancelledAt,
         trialEndsAt,
         nextBillingDate,
@@ -1193,7 +1224,9 @@ class _$UserSubscriptionModelImpl extends _UserSubscriptionModel {
         const DeepCollectionEquality().hash(_payments),
         createdAt,
         updatedAt,
-        const DeepCollectionEquality().hash(_metadata)
+        const DeepCollectionEquality().hash(_metadata),
+        isActive,
+        isTrial
       ]);
 
   @JsonKey(ignore: true)
@@ -1217,8 +1250,8 @@ abstract class _UserSubscriptionModel extends UserSubscriptionModel {
       required final String userId,
       required final String planId,
       required final SubscriptionStatus status,
-      @JsonKey(name: 'started_at') required final DateTime startedAt,
-      @JsonKey(name: 'expires_at') final DateTime? expiresAt,
+      @JsonKey(name: 'started_at') final DateTime? startDate,
+      @JsonKey(name: 'expires_at') final DateTime? endDate,
       @JsonKey(name: 'cancelled_at') final DateTime? cancelledAt,
       @JsonKey(name: 'trial_ends_at') final DateTime? trialEndsAt,
       @JsonKey(name: 'next_billing_date') final DateTime? nextBillingDate,
@@ -1230,9 +1263,11 @@ abstract class _UserSubscriptionModel extends UserSubscriptionModel {
       @JsonKey(name: 'payment_method') final PaymentMethodModel? paymentMethod,
       final SubscriptionPlanModel? plan,
       final List<PaymentModel>? payments,
-      @JsonKey(name: 'created_at') required final DateTime createdAt,
-      @JsonKey(name: 'updated_at') required final DateTime updatedAt,
-      final Map<String, dynamic>? metadata}) = _$UserSubscriptionModelImpl;
+      @JsonKey(name: 'created_at') final DateTime? createdAt,
+      @JsonKey(name: 'updated_at') final DateTime? updatedAt,
+      final Map<String, dynamic>? metadata,
+      final bool isActive,
+      final bool isTrial}) = _$UserSubscriptionModelImpl;
   const _UserSubscriptionModel._() : super._();
 
   factory _UserSubscriptionModel.fromJson(Map<String, dynamic> json) =
@@ -1248,10 +1283,10 @@ abstract class _UserSubscriptionModel extends UserSubscriptionModel {
   SubscriptionStatus get status;
   @override
   @JsonKey(name: 'started_at')
-  DateTime get startedAt;
+  DateTime? get startDate;
   @override
   @JsonKey(name: 'expires_at')
-  DateTime? get expiresAt;
+  DateTime? get endDate;
   @override
   @JsonKey(name: 'cancelled_at')
   DateTime? get cancelledAt;
@@ -1282,12 +1317,16 @@ abstract class _UserSubscriptionModel extends UserSubscriptionModel {
   List<PaymentModel>? get payments;
   @override
   @JsonKey(name: 'created_at')
-  DateTime get createdAt;
+  DateTime? get createdAt;
   @override
   @JsonKey(name: 'updated_at')
-  DateTime get updatedAt;
+  DateTime? get updatedAt;
   @override
   Map<String, dynamic>? get metadata;
+  @override
+  bool get isActive;
+  @override
+  bool get isTrial;
   @override
   @JsonKey(ignore: true)
   _$$UserSubscriptionModelImplCopyWith<_$UserSubscriptionModelImpl>

@@ -25,6 +25,7 @@ mixin _$HomeState {
   WeeklyProgressData? get weeklyProgress => throw _privateConstructorUsedError;
   List<QuickActionModel> get quickActions => throw _privateConstructorUsedError;
   String? get error => throw _privateConstructorUsedError;
+  bool get isPurchased => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $HomeStateCopyWith<HomeState> get copyWith =>
@@ -44,7 +45,8 @@ abstract class $HomeStateCopyWith<$Res> {
       List<InsightModel> insights,
       WeeklyProgressData? weeklyProgress,
       List<QuickActionModel> quickActions,
-      String? error});
+      String? error,
+      bool isPurchased});
 
   $DashboardStatsCopyWith<$Res>? get stats;
   $WeeklyProgressDataCopyWith<$Res>? get weeklyProgress;
@@ -71,6 +73,7 @@ class _$HomeStateCopyWithImpl<$Res, $Val extends HomeState>
     Object? weeklyProgress = freezed,
     Object? quickActions = null,
     Object? error = freezed,
+    Object? isPurchased = null,
   }) {
     return _then(_value.copyWith(
       isLoading: null == isLoading
@@ -105,6 +108,10 @@ class _$HomeStateCopyWithImpl<$Res, $Val extends HomeState>
           ? _value.error
           : error // ignore: cast_nullable_to_non_nullable
               as String?,
+      isPurchased: null == isPurchased
+          ? _value.isPurchased
+          : isPurchased // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 
@@ -149,7 +156,8 @@ abstract class _$$HomeStateImplCopyWith<$Res>
       List<InsightModel> insights,
       WeeklyProgressData? weeklyProgress,
       List<QuickActionModel> quickActions,
-      String? error});
+      String? error,
+      bool isPurchased});
 
   @override
   $DashboardStatsCopyWith<$Res>? get stats;
@@ -176,6 +184,7 @@ class __$$HomeStateImplCopyWithImpl<$Res>
     Object? weeklyProgress = freezed,
     Object? quickActions = null,
     Object? error = freezed,
+    Object? isPurchased = null,
   }) {
     return _then(_$HomeStateImpl(
       isLoading: null == isLoading
@@ -210,6 +219,10 @@ class __$$HomeStateImplCopyWithImpl<$Res>
           ? _value.error
           : error // ignore: cast_nullable_to_non_nullable
               as String?,
+      isPurchased: null == isPurchased
+          ? _value.isPurchased
+          : isPurchased // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -225,7 +238,8 @@ class _$HomeStateImpl extends _HomeState {
       final List<InsightModel> insights = const [],
       this.weeklyProgress,
       final List<QuickActionModel> quickActions = const [],
-      this.error})
+      this.error,
+      this.isPurchased = false})
       : _recentGoals = recentGoals,
         _upcomingAssessments = upcomingAssessments,
         _insights = insights,
@@ -278,10 +292,13 @@ class _$HomeStateImpl extends _HomeState {
 
   @override
   final String? error;
+  @override
+  @JsonKey()
+  final bool isPurchased;
 
   @override
   String toString() {
-    return 'HomeState(isLoading: $isLoading, recentGoals: $recentGoals, upcomingAssessments: $upcomingAssessments, stats: $stats, insights: $insights, weeklyProgress: $weeklyProgress, quickActions: $quickActions, error: $error)';
+    return 'HomeState(isLoading: $isLoading, recentGoals: $recentGoals, upcomingAssessments: $upcomingAssessments, stats: $stats, insights: $insights, weeklyProgress: $weeklyProgress, quickActions: $quickActions, error: $error, isPurchased: $isPurchased)';
   }
 
   @override
@@ -301,7 +318,9 @@ class _$HomeStateImpl extends _HomeState {
                 other.weeklyProgress == weeklyProgress) &&
             const DeepCollectionEquality()
                 .equals(other._quickActions, _quickActions) &&
-            (identical(other.error, error) || other.error == error));
+            (identical(other.error, error) || other.error == error) &&
+            (identical(other.isPurchased, isPurchased) ||
+                other.isPurchased == isPurchased));
   }
 
   @override
@@ -314,7 +333,8 @@ class _$HomeStateImpl extends _HomeState {
       const DeepCollectionEquality().hash(_insights),
       weeklyProgress,
       const DeepCollectionEquality().hash(_quickActions),
-      error);
+      error,
+      isPurchased);
 
   @JsonKey(ignore: true)
   @override
@@ -332,7 +352,8 @@ abstract class _HomeState extends HomeState {
       final List<InsightModel> insights,
       final WeeklyProgressData? weeklyProgress,
       final List<QuickActionModel> quickActions,
-      final String? error}) = _$HomeStateImpl;
+      final String? error,
+      final bool isPurchased}) = _$HomeStateImpl;
   const _HomeState._() : super._();
 
   @override
@@ -351,6 +372,8 @@ abstract class _HomeState extends HomeState {
   List<QuickActionModel> get quickActions;
   @override
   String? get error;
+  @override
+  bool get isPurchased;
   @override
   @JsonKey(ignore: true)
   _$$HomeStateImplCopyWith<_$HomeStateImpl> get copyWith =>

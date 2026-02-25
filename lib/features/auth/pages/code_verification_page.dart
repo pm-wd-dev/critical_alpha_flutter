@@ -167,57 +167,56 @@ class _CodeVerificationPageState extends ConsumerState<CodeVerificationPage> {
   }
 
   Widget _buildPinCodeField() {
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
-          child: PinCodeTextField(
-            appContext: context,
-            length: 6,
-            controller: _codeController,
-            keyboardType: TextInputType.number,
-            animationType: AnimationType.none,
-            textStyle: const TextStyle(
-              fontSize: 18,
-              fontFamily: 'Poppins',
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
-            ),
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            pinTheme: PinTheme(
-              shape: PinCodeFieldShape.box,
-              borderRadius: BorderRadius.circular(0),
-              fieldHeight: 48,
-              fieldWidth: 48,
-              activeBorderWidth: 2,
-              selectedBorderWidth: 2,
-              inactiveBorderWidth: 1,
-              activeColor: const Color(0xFF0147D9),
-              selectedColor: const Color(0xFF0147D9),
-              inactiveColor: const Color(0xFFE0E0E0),
-              activeFillColor: Colors.white,
-              selectedFillColor: Colors.white,
-              inactiveFillColor: const Color(0xFFF5F5F5),
-            ),
-            animationDuration: const Duration(milliseconds: 0),
-            backgroundColor: Colors.transparent,
-            enableActiveFill: true,
-            showCursor: false,
-            enablePinAutofill: false,
-            onCompleted: (code) {
-              // Auto-submit when all digits are entered
-              if (code.length == 6) {
-                _handleVerifyCode(code);
-              }
-            },
-            onChanged: (value) {},
-            beforeTextPaste: (text) {
-              // Allow paste if it's 6 digits
-              return text != null && text.length == 6 && int.tryParse(text) != null;
-            },
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: PinCodeTextField(
+        appContext: context,
+        length: 6,
+        controller: _codeController,
+        keyboardType: TextInputType.number,
+        animationType: AnimationType.none,
+        textStyle: const TextStyle(
+          fontSize: 20,
+          fontFamily: 'Poppins',
+          fontWeight: FontWeight.w600,
+          color: Colors.black,
         ),
-      ],
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        pinTheme: PinTheme(
+          shape: PinCodeFieldShape.box,
+          borderRadius: BorderRadius.circular(8),
+          fieldHeight: 50,
+          fieldWidth: 40,
+          fieldOuterPadding: const EdgeInsets.symmetric(horizontal: 2),
+          activeBorderWidth: 2,
+          selectedBorderWidth: 2,
+          inactiveBorderWidth: 1.5,
+          activeColor: const Color(0xFF0147D9),
+          selectedColor: const Color(0xFF0147D9),
+          inactiveColor: const Color(0xFFD0D0D0),
+          activeFillColor: Colors.white,
+          selectedFillColor: const Color(0xFFF8F9FF),
+          inactiveFillColor: const Color(0xFFF8F8F8),
+        ),
+        animationDuration: const Duration(milliseconds: 100),
+        backgroundColor: Colors.transparent,
+        enableActiveFill: true,
+        showCursor: true,
+        cursorColor: const Color(0xFF0147D9),
+        cursorHeight: 24,
+        enablePinAutofill: true,
+        onCompleted: (code) {
+          // Auto-submit when all digits are entered
+          if (code.length == 6) {
+            _handleVerifyCode(code);
+          }
+        },
+        onChanged: (value) {},
+        beforeTextPaste: (text) {
+          // Allow paste if it's 6 digits
+          return text != null && text.length == 6 && int.tryParse(text) != null;
+        },
+      ),
     );
   }
 

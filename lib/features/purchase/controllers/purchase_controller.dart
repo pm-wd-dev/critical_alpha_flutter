@@ -8,6 +8,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/errors/failures.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../home/controllers/dashboard_controller.dart';
 import '../models/subscription_model.dart';
 
 part 'purchase_controller.freezed.dart';
@@ -101,6 +102,8 @@ class PurchaseController extends StateNotifier<PurchaseState> {
     await loadSubscriptionPlans();
     await loadCurrentSubscription();
     _setupPurchaseUpdates();
+    // Auto-restore purchases on app startup like React Native
+    await _autoRestorePurchasesOnStartup();
   }
 
   Future<void> _checkPurchaseAvailability() async {
@@ -131,26 +134,44 @@ class PurchaseController extends StateNotifier<PurchaseState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final user = _ref.read(authStateProvider).value;
-      if (user == null) {
-        state = state.copyWith(
-          isLoading: false,
-          error: 'User not authenticated',
-        );
-        return;
-      }
-
-      final response = await _apiClient.get('/subscriptions/plans');
-      final plans = (response.data['data'] as List)
-          .map((json) => SubscriptionPlanModel.fromJson(json))
-          .toList();
+      // Define Critical Alpha subscription product IDs like React Native
+      final criticalAlphaPlans = [
+        SubscriptionPlanModel(
+          id: 'criticalapha_month',
+          name: 'Monthly',
+          description: '3 day free trial then \$4.95/month',
+          price: 4.95,
+          currency: 'USD',
+          billingPeriod: BillingPeriod.monthly,
+          trialDays: 3,
+          features: [],
+          appleProductId: 'criticalapha_month',
+          googleProductId: 'criticalapha_month',
+          isPopular: true,
+          isActive: true,
+        ),
+        SubscriptionPlanModel(
+          id: 'criticalalpha_year',
+          name: 'Annually',
+          description: '3 day free trial then \$49.95/year',
+          price: 49.95,
+          currency: 'USD',
+          billingPeriod: BillingPeriod.yearly,
+          trialDays: 3,
+          features: [],
+          appleProductId: Platform.isIOS ? 'criticalalpha_year' : null,
+          googleProductId: Platform.isAndroid ? 'criticalalpha_year' : null,
+          isRecommended: true,
+          isActive: true,
+        ),
+      ];
 
       // Load store products for the plans
-      await _loadStoreProducts(plans);
+      await _loadStoreProducts(criticalAlphaPlans);
 
       state = state.copyWith(
         isLoading: false,
-        availablePlans: plans,
+        availablePlans: criticalAlphaPlans,
       );
     } catch (e) {
       state = state.copyWith(
@@ -300,26 +321,42 @@ class PurchaseController extends StateNotifier<PurchaseState> {
     }
   }
 
-  void _handlePurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) {
+  void _handlePurchaseUpdate(List<PurchaseDetails> purchaseDetailsList) async {
     for (final PurchaseDetails purchaseDetails in purchaseDetailsList) {
+      print('Purchase update status: ${purchaseDetails.status}');
+      print('Product ID: ${purchaseDetails.productID}');
+
       switch (purchaseDetails.status) {
         case PurchaseStatus.pending:
           state = state.copyWith(currentFlow: PurchaseFlow.pending);
           break;
 
         case PurchaseStatus.purchased:
-          _handleSuccessfulPurchase(purchaseDetails);
+          // Complete the purchase first
+          if (purchaseDetails.pendingCompletePurchase) {
+            await _inAppPurchase.completePurchase(purchaseDetails);
+          }
+          await _handleSuccessfulPurchase(purchaseDetails);
           break;
 
         case PurchaseStatus.error:
+          if (purchaseDetails.pendingCompletePurchase) {
+            await _inAppPurchase.completePurchase(purchaseDetails);
+          }
           _handleFailedPurchase(purchaseDetails);
           break;
 
         case PurchaseStatus.restored:
+          if (purchaseDetails.pendingCompletePurchase) {
+            await _inAppPurchase.completePurchase(purchaseDetails);
+          }
           _handleRestoredPurchase(purchaseDetails);
           break;
 
         case PurchaseStatus.canceled:
+          if (purchaseDetails.pendingCompletePurchase) {
+            await _inAppPurchase.completePurchase(purchaseDetails);
+          }
           state = state.copyWith(
             isPurchasing: false,
             currentFlow: PurchaseFlow.none,
@@ -327,25 +364,41 @@ class PurchaseController extends StateNotifier<PurchaseState> {
           );
           break;
       }
-
-      // Complete the purchase
-      if (purchaseDetails.pendingCompletePurchase) {
-        _inAppPurchase.completePurchase(purchaseDetails);
-      }
     }
   }
 
   Future<void> _handleSuccessfulPurchase(PurchaseDetails purchaseDetails) async {
     try {
-      // Verify purchase with backend
-      final response = await _apiClient.post('/subscriptions/verify-purchase', data: {
-        'product_id': purchaseDetails.productID,
-        'transaction_id': purchaseDetails.transactionDate,
-        'purchase_token': purchaseDetails.verificationData.serverVerificationData,
-        'platform': Platform.isIOS ? 'iOS' : (Platform.isAndroid ? 'android' : 'unknown'),
-      });
+      print('Handling successful purchase for product: ${purchaseDetails.productID}');
 
-      final subscription = UserSubscriptionModel.fromJson(response.data['data']);
+      // Update subscription status exactly like React Native implementation
+      final values = {
+        'subscriptionTransactionId': purchaseDetails.purchaseID ?? purchaseDetails.transactionDate,
+        'subscriptionAmount': purchaseDetails.productID.contains('month') ? 4.95 : 49.95,
+        'isSubscribed': true,
+      };
+
+      print('Sending subscription update to backend: $values');
+
+      // Call _updateSubscription endpoint exactly like React Native does
+      try {
+        final response = await _apiClient.post('/user/update-subscription-details', data: values);
+        print('Backend subscription update response: ${response.data}');
+      } catch (apiError) {
+        print('Backend API error: $apiError');
+        // Continue even if backend fails - purchase is already successful
+      }
+
+      final subscription = UserSubscriptionModel(
+        id: purchaseDetails.purchaseID ?? '',
+        planId: purchaseDetails.productID,
+        userId: _ref.read(authStateProvider).value?.id ?? '',
+        status: SubscriptionStatus.active,
+        startDate: DateTime.now(),
+        endDate: DateTime.now().add(Duration(days: purchaseDetails.productID.contains('month') ? 30 : 365)),
+        isActive: true,
+        isTrial: false,
+      );
 
       // Find the purchased plan
       final planList = state.availablePlans
@@ -367,6 +420,15 @@ class PurchaseController extends StateNotifier<PurchaseState> {
           purchaseDate: DateTime.now(),
         ),
       );
+
+      // Notify dashboard to refresh subscription status
+      try {
+        final dashboardController = _ref.read(dashboardControllerProvider.notifier);
+        dashboardController.setPurchased(true);
+        await dashboardController.refreshDashboard();
+      } catch (e) {
+        print('Could not refresh dashboard: $e');
+      }
 
     } catch (e) {
       state = state.copyWith(
@@ -405,14 +467,65 @@ class PurchaseController extends StateNotifier<PurchaseState> {
   }
 
   void _handleRestoredPurchase(PurchaseDetails purchaseDetails) {
-    // Handle restored purchases (iOS mainly)
-    state = state.copyWith(
-      isRestoring: false,
-      currentFlow: PurchaseFlow.none,
-    );
+    // Handle restored purchases like React Native implementation
+    if (purchaseDetails.productID.isNotEmpty) {
+      // Update subscription status using the correct API endpoint
+      final values = {
+        'subscriptionTransactionId': purchaseDetails.purchaseID ?? purchaseDetails.transactionDate,
+        'subscriptionAmount': purchaseDetails.productID.contains('month') ? 4.95 : 49.95,
+        'isSubscribed': true,
+      };
 
-    // Verify restored purchase with backend
-    _verifyRestoredPurchase(purchaseDetails);
+      // Call API to update subscription
+      _apiClient.post('/user/update-subscription-details', data: values).then((_) async {
+        state = state.copyWith(
+          isRestoring: false,
+          currentFlow: PurchaseFlow.none,
+          hasActiveSubscription: true,
+          currentSubscription: UserSubscriptionModel(
+            id: purchaseDetails.purchaseID ?? '',
+            planId: purchaseDetails.productID,
+            userId: _ref.read(authStateProvider).value?.id ?? '',
+            status: SubscriptionStatus.active,
+            startDate: DateTime.now(),
+            endDate: DateTime.now().add(Duration(days: purchaseDetails.productID.contains('month') ? 30 : 365)),
+            isActive: true,
+            isTrial: false,
+          ),
+        );
+
+        // Show success message
+        state = state.copyWith(
+          lastPurchaseResult: PurchaseResult(
+            success: true,
+            planId: purchaseDetails.productID,
+            message: 'Previous purchases have been restored.',
+            purchaseDate: DateTime.now(),
+          ),
+        );
+
+        // Notify dashboard to refresh subscription status
+        try {
+          final dashboardController = _ref.read(dashboardControllerProvider.notifier);
+          dashboardController.setPurchased(true);
+          await dashboardController.refreshDashboard();
+        } catch (e) {
+          print('Could not refresh dashboard: $e');
+        }
+      }).catchError((e) {
+        state = state.copyWith(
+          isRestoring: false,
+          currentFlow: PurchaseFlow.none,
+          purchaseError: 'No previous purchases to restore.',
+        );
+      });
+    } else {
+      state = state.copyWith(
+        isRestoring: false,
+        currentFlow: PurchaseFlow.none,
+        purchaseError: 'No previous purchases to restore.',
+      );
+    }
   }
 
   Future<void> _verifyRestoredPurchase(PurchaseDetails purchaseDetails) async {
@@ -443,13 +556,42 @@ class PurchaseController extends StateNotifier<PurchaseState> {
 
     try {
       await _inAppPurchase.restorePurchases();
+
+      // Wait a bit to see if any purchases are restored
+      await Future.delayed(const Duration(seconds: 2));
+
+      // If still restoring (no purchases were found), stop restoring
+      if (state.isRestoring) {
+        state = state.copyWith(
+          isRestoring: false,
+          currentFlow: PurchaseFlow.none,
+          lastPurchaseResult: PurchaseResult(
+            success: false,
+            planId: '',
+            message: 'No previous purchases to restore',
+            purchaseDate: DateTime.now(),
+          ),
+        );
+      }
     } catch (e) {
       state = state.copyWith(
         isRestoring: false,
         currentFlow: PurchaseFlow.none,
-        purchaseError: 'Failed to restore purchases: ${_getErrorMessage(e)}',
+        purchaseError: 'No previous purchases to restore',
       );
-      rethrow;
+      // Don't rethrow - handle gracefully like React Native
+    }
+  }
+
+  Future<void> _autoRestorePurchasesOnStartup() async {
+    if (!state.canMakePurchases) return;
+
+    try {
+      // Silently restore purchases on startup like React Native
+      await _inAppPurchase.restorePurchases();
+    } catch (e) {
+      // Silently fail - user hasn't purchased before
+      print('No previous purchases found: $e');
     }
   }
 
