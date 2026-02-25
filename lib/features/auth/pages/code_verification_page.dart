@@ -79,15 +79,17 @@ class _CodeVerificationPageState extends ConsumerState<CodeVerificationPage> {
         _showSuccess(next.message!);
         // Navigate based on verification type
         Future.delayed(const Duration(seconds: 1), () {
-          if (mounted) {
-            if (widget.type == 'email_verification') {
-              context.go(RouteConstants.login);
-            } else if (widget.type == 'password_reset') {
-              // Navigate to new password page with email parameter
-              context.go('${RouteConstants.newPassword}?email=${Uri.encodeComponent(widget.email)}');
-            } else {
-              context.go(RouteConstants.home);
-            }
+          if (!mounted) return;
+
+          if (widget.type == 'email_verification') {
+            // After email verification for signup, navigate to login
+            context.go(RouteConstants.login);
+          } else if (widget.type == 'password_reset') {
+            // Navigate to new password page with email parameter
+            context.go('${RouteConstants.newPassword}?email=${Uri.encodeComponent(widget.email)}');
+          } else {
+            // Default to login for any other verification type
+            context.go(RouteConstants.login);
           }
         });
       }

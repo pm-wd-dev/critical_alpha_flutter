@@ -25,6 +25,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     if (widget.planId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(currentPlanIdProvider.notifier).state = widget.planId;
+        // Force refresh assessments when coming from assessment completion
+        ref.invalidate(assessmentsProvider);
       });
     }
   }
@@ -111,13 +113,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             Expanded(
               child: assessmentsAsync.when(
                 data: (assessments) {
-                  // Auto-select first assessment if available and none selected
-                  if (assessments.isNotEmpty && selectedAssessment == null && !showAll) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      ref.read(selectedAssessmentProvider.notifier).state = assessments.first;
-                    });
-                  }
-
                   if (assessments.isEmpty) {
                     return const Center(
                       child: Text(
@@ -135,16 +130,6 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       // Assessment Dropdown
                       AssessmentDropdown(assessments: assessments),
 
-                      // 7.9d: Show All / Show Individual button always visible above chart
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 4),
-                        child: Consumer(
-                          builder: (context, ref, _) =>
-                              _buildShowAllButton(context, ref),
-                        ),
-                      ),
-
                       // Main Content Area
                       Expanded(
                         child: SingleChildScrollView(
@@ -152,18 +137,19 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                             children: [
                               if (!showAll && selectedAssessment == null)
                                 const Padding(
-                                  padding: EdgeInsets.all(32.0),
+                                  padding: EdgeInsets.symmetric(vertical: 100),
                                   child: Text(
                                     'Select Any Assessment From Dropdown To View Graph',
                                     style: TextStyle(
-                                      fontSize: 15,
-                                      color: Colors.grey,
+                                      fontSize: 16,
+                                      color: Color(0xFF999999),
+                                      fontFamily: 'Poppins',
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
 
-                              // Chart Display
+                              // Chart Display for single assessment
                               if (!showAll && selectedAssessment != null)
                                 Consumer(
                                   builder: (context, ref, child) {
@@ -186,11 +172,21 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                           );
                                         }
 
-                                        return AssessmentLineChart(
-                                          chartData: chartData,
-                                          type: 'single',
-                                          selectedAssessmentName:
-                                              selectedAssessment.name,
+                                        return Column(
+                                          children: [
+                                            AssessmentLineChart(
+                                              chartData: chartData,
+                                              type: 'single',
+                                              selectedAssessmentName:
+                                                  selectedAssessment.name,
+                                            ),
+                                            // Show All button below the chart
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 16, vertical: 20),
+                                              child: _buildShowAllButton(context, ref),
+                                            ),
+                                          ],
                                         );
                                       },
                                       loading: () => const Padding(
@@ -232,9 +228,19 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                           );
                                         }
 
-                                        return AssessmentLineChart(
-                                          chartData: chartData,
-                                          type: 'all',
+                                        return Column(
+                                          children: [
+                                            AssessmentLineChart(
+                                              chartData: chartData,
+                                              type: 'all',
+                                            ),
+                                            // Show Individual button below the chart
+                                            Padding(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 16, vertical: 20),
+                                              child: _buildShowAllButton(context, ref),
+                                            ),
+                                          ],
                                         );
                                       },
                                       loading: () => const Padding(
@@ -277,11 +283,21 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   Widget _buildShowAllButton(BuildContext context, WidgetRef ref) {
     final showAll = ref.watch(showAllChartsProvider);
+    final planId = widget.planId ?? ref.watch(currentPlanIdProvider);
+    final assessmentsAsync = ref.watch(assessmentsProvider(planId));
 
     return ElevatedButton(
       onPressed: () {
         ref.read(showAllChartsProvider.notifier).state = !showAll;
-        if (!showAll) {
+        if (showAll) {
+          // When switching from "Show All" to "Show Individual", auto-select first assessment
+          assessmentsAsync.whenData((assessments) {
+            if (assessments.isNotEmpty) {
+              ref.read(selectedAssessmentProvider.notifier).state = assessments.first;
+            }
+          });
+        } else {
+          // When switching from "Show Individual" to "Show All", clear selection
           ref.read(selectedAssessmentProvider.notifier).state = null;
         }
       },

@@ -45,7 +45,12 @@ class _AssessmentCompletePageState
             backgroundColor: Colors.green,
           ),
         );
-        context.go('/plan/${widget.planId}');
+        // Add a small delay to ensure data is saved on server before navigating
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (mounted) {
+          // Navigate directly to results screen with planId
+          context.go('/results?planId=${widget.planId}');
+        }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

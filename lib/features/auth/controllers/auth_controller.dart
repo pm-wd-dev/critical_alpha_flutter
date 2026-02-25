@@ -93,7 +93,15 @@ class AuthController extends StateNotifier<AuthState> {
 
   // Login
   Future<bool> login(LoginRequest request) async {
-    state = state.copyWith(isLoading: true, error: null, message: null);
+    // Clear any existing auth state before login attempt
+    await _authRepository.clearStoredData();
+    state = state.copyWith(
+      isLoading: true,
+      error: null,
+      message: null,
+      user: null,  // Clear any stale user data
+      isAuthenticated: false,  // Ensure not authenticated during login
+    );
 
     final result = await _authRepository.login(request);
 
@@ -116,8 +124,13 @@ class AuthController extends StateNotifier<AuthState> {
         );
         return true;
       },
-      failure: (error) {
+      failure: (error) async {
+        // On login failure, ensure we clear any stored data
+        await _authRepository.clearStoredData();
+
         state = state.copyWith(
+          user: null,  // Clear user data on failure
+          isAuthenticated: false,  // Ensure not authenticated
           isLoading: false,
           error: error,
           message: null,
@@ -134,9 +147,12 @@ class AuthController extends StateNotifier<AuthState> {
     final result = await _authRepository.signup(request);
 
     return result.when(
-      success: (authResponse) {
+      success: (authResponse) async {
+        // Clear any stored credentials to ensure clean state
+        await _authRepository.clearStoredData();
+
         state = state.copyWith(
-          user: authResponse.user,
+          user: null,  // Don't store user data yet
           isAuthenticated: false, // Don't authenticate until OTP verification
           isLoading: false,
           error: null,
@@ -216,12 +232,28 @@ class AuthController extends StateNotifier<AuthState> {
     final result = await _authRepository.verifyCode(request);
 
     return result.when(
-      success: (_) {
-        state = state.copyWith(
-          isLoading: false,
-          error: null,
-          message: 'Code verified successfully',
-        );
+      success: (response) async {
+        // If it's email verification after signup, DON'T authenticate yet
+        if (request.type == 'email_verification') {
+          // For signup flow: clear auth state and user should login
+          // Clear any stored credentials to ensure clean state
+          await _authRepository.clearStoredData();
+
+          state = state.copyWith(
+            user: null,  // Clear user data
+            isAuthenticated: false,  // Keep unauthenticated to redirect to login
+            isLoading: false,
+            error: null,
+            message: 'Email verified successfully. Please login to continue.',
+          );
+        } else {
+          // For password reset or other flows
+          state = state.copyWith(
+            isLoading: false,
+            error: null,
+            message: 'Code verified successfully',
+          );
+        }
         return true;
       },
       failure: (error) {

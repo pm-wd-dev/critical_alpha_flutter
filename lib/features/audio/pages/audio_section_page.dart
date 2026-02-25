@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_fonts.dart';
+import '../../../routes/route_constants.dart';
 import '../controllers/critical_alpha_audio_controller.dart';
 import '../models/audio_models.dart';
 
@@ -46,7 +47,7 @@ class _AudioSectionPageState extends ConsumerState<AudioSectionPage> {
             // Stop audio when leaving audio section
             ref.read(criticalAlphaAudioControllerProvider.notifier).stopAudio();
             // Navigate directly to home tab instead of popping
-            context.go('/');
+            context.go(RouteConstants.home);
           },
         ),
         title: const Text(

@@ -102,7 +102,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     try {
       final chartData = await _resultsApiService.getLineChartData(
         assessmentId: id,
-        type: 'all',
+        type: 'single',
         planId: widget.planId,
       );
 
@@ -603,19 +603,12 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                           if (_assessments.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
+                                  horizontal: 16, vertical: 12),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                    color: const Color(0xFFDDDDDD)),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.22),
-                                    blurRadius: 2.22,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
+                                    color: const Color(0xFFE0E0E0)),
                               ),
                               child: DropdownButtonHideUnderline(
                                 child: DropdownButton<String>(
@@ -623,22 +616,20 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                                   isExpanded: true,
                                   icon: const Icon(
                                     Icons.keyboard_arrow_down,
-                                    color: Color(0xFF0147D9),
+                                    color: Colors.grey,
                                   ),
                                   style: const TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 15,
                                     color: Colors.black87,
                                     fontFamily: 'Poppins',
                                   ),
-                                  items: _assessments.map((a) {
+                                  items: _assessments.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final a = entry.value;
                                     final id = a['_id'] as String? ?? '';
-                                    final raw = a['createdAt']?.toString() ?? '';
-                                    final date = raw.length >= 10
-                                        ? raw.substring(0, 10)
-                                        : 'Unknown';
                                     return DropdownMenuItem<String>(
                                       value: id,
-                                      child: Text('Assessment — $date'),
+                                      child: Text('Assessment ${index + 1}'),
                                     );
                                   }).toList(),
                                   onChanged: (id) {
@@ -654,35 +645,74 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
                             ),
                           const SizedBox(height: 10),
 
-                          // Chart or no-data box
-                          _isLoadingChart
-                              ? const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              : _chartData != null && _chartData!.isNotEmpty
-                                  ? AssessmentLineChart(
-                                      chartData: _chartData!,
-                                      type: 'all',
-                                    )
-                                  : Container(
-                                      height: 120,
-                                      alignment: Alignment.center,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF0F0F0),
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                      ),
-                                      child: const Text(
-                                        'No Data Available For This User',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey,
+                          // Chart with legend and graph
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFFE8E8E8),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Legend for selected assessment
+                                if (_selectedAssessmentId != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 12,
+                                          height: 12,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFF0147D9),
+                                            shape: BoxShape.circle,
+                                          ),
                                         ),
-                                      ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Assessment ${_assessments.indexWhere((a) => a['_id'] == _selectedAssessmentId) + 1}',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.black87,
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                  ),
+                                // Chart or loading/no-data state
+                                _isLoadingChart
+                                    ? const Center(
+                                        child: Padding(
+                                          padding: EdgeInsets.all(20),
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      )
+                                    : _chartData != null && _chartData!.isNotEmpty
+                                        ? AssessmentLineChart(
+                                            chartData: _chartData!,
+                                            type: 'single',
+                                            selectedAssessmentName: 'Assessment ${_assessments.indexWhere((a) => a['_id'] == _selectedAssessmentId) + 1}',
+                                          )
+                                        : Container(
+                                            height: 200,
+                                            alignment: Alignment.center,
+                                            child: const Text(
+                                              'No Data Available',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ),
+                              ],
+                            ),
+                          ),
                           const SizedBox(height: 20),
 
                           // ELEVATE field

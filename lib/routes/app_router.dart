@@ -56,7 +56,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Read auth state without watching to prevent rebuilds
       final authController = ref.read(authControllerProvider);
       final isLoggedIn = authController.isAuthenticated;
-      final isInitializing = authController.isLoading;
+      final user = authController.user;
+      final isEmailVerified = user?.isEmailVerified ?? false;
       final currentPath = state.fullPath ?? '';
 
       // Public routes that don't require authentication
@@ -90,6 +91,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // If user is not logged in and trying to access protected route
       if (!isLoggedIn && !isPublicRoute) {
         return RouteConstants.login;
+      }
+
+      // If user is logged in but email not verified, redirect to code verification
+      // unless they're already on the code verification page
+      if (isLoggedIn && !isEmailVerified && !currentPath.startsWith(RouteConstants.codeVerification)) {
+        // Encode the email for the query parameter
+        final email = user?.email ?? '';
+        final encodedEmail = Uri.encodeComponent(email);
+        return '${RouteConstants.codeVerification}?email=$encodedEmail&type=email_verification';
       }
 
       // No redirect needed

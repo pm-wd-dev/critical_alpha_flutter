@@ -45,7 +45,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         validators: [
           Validators.required,
           Validators.minLength(8),
-          Validators.pattern(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]'),
+          Validators.pattern(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]', validationMessage: 'pattern'),
         ],
       ),
       'confirmPassword': FormControl<String>(
@@ -226,7 +226,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
             hintText: 'Enter Your Password',
             validators: {
               ValidationMessage.required: (_) => 'Please enter your password',
-              ValidationMessage.minLength: (_) => 'Password must contain at least 8 characters &\none special character, the first letter should be\ncapitalized, and at least one numeric character.',
+              ValidationMessage.minLength: (_) => 'Password must contain at least 8 characters',
+              'pattern': (_) => 'Password must contain at least 8 characters &\none special character, the first letter should be\ncapitalized, and at least one numeric character.',
               'format': (_) => 'Password must contain at least 8 characters &\none special character, the first letter should be\ncapitalized, and at least one numeric character.',
             },
           ),

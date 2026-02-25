@@ -16,10 +16,16 @@ class ResultsApiService {
 
       final data = response.data;
       if (data['data'] != null && data['data'] is List) {
-        return (data['data'] as List)
+        final assessmentsList = data['data'] as List;
+        // Filter only assessments that belong to the requested planId
+        final filteredList = planId != null
+            ? assessmentsList.where((item) => item['plan_id'] == planId).toList()
+            : assessmentsList;
+
+        return filteredList
             .map((item) => Assessment(
                   id: item['_id'] ?? '',
-                  name: 'Assessment ${(data['data'] as List).indexOf(item) + 1}',
+                  name: 'Assessment ${filteredList.indexOf(item) + 1}',
                   createdAt: item['createdAt'] != null
                       ? DateTime.parse(item['createdAt'])
                       : DateTime.now(),
@@ -30,7 +36,7 @@ class ResultsApiService {
       }
       return [];
     } catch (e) {
-      // Error: $e
+      // Error fetching assessments: $e
       return [];
     }
   }

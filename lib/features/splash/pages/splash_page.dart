@@ -80,17 +80,29 @@ class _SplashPageState extends ConsumerState<SplashPage>
       await Future.delayed(const Duration(seconds: 3));
 
       if (mounted) {
-        final isAuthenticated = ref.read(isAuthenticatedProvider);
+        final authState = ref.read(authControllerProvider);
+        final isAuthenticated = authState.isAuthenticated;
+        final user = authState.user;
+
+        // Additional check - if user exists but no valid token, clear auth
+        if (user != null && !isAuthenticated) {
+          ref.read(authControllerProvider.notifier).clearAuthState();
+          context.go(RouteConstants.login);
+          return;
+        }
 
         if (isAuthenticated) {
+          // If user is authenticated, always go to home regardless of email verification
+          // Email verification should only be required during signup flow
           context.go(RouteConstants.home);
         } else {
           context.go(RouteConstants.login);
         }
       }
     } catch (e) {
-      // If something goes wrong, go to login
+      // If something goes wrong, clear auth and go to login
       if (mounted) {
+        ref.read(authControllerProvider.notifier).clearAuthState();
         context.go(RouteConstants.login);
       }
     }

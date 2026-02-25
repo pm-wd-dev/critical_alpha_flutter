@@ -17,29 +17,19 @@ class AssessmentDropdown extends ConsumerStatefulWidget {
 }
 
 class _AssessmentDropdownState extends ConsumerState<AssessmentDropdown> {
-  // 7.9b: Expand by default so the list is visible immediately
-  bool isExpanded = true;
+  bool isExpanded = false;
 
-  String _formatDate(DateTime date) {
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
 
   @override
   Widget build(BuildContext context) {
     final selectedAssessment = ref.watch(selectedAssessmentProvider);
     final showAll = ref.watch(showAllChartsProvider);
 
-    // 7.9c: Build trigger label with name + created date
     String triggerLabel;
     if (showAll) {
       triggerLabel = 'All Assessments';
     } else if (selectedAssessment != null) {
-      triggerLabel =
-          '${selectedAssessment.name}  •  ${_formatDate(selectedAssessment.createdAt)}';
+      triggerLabel = selectedAssessment.name;
     } else {
       triggerLabel = 'Select Assessment';
     }
@@ -51,15 +41,14 @@ class _AssessmentDropdownState extends ConsumerState<AssessmentDropdown> {
         GestureDetector(
           onTap: () => setState(() => isExpanded = !isExpanded),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            margin: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(15),
               border: Border.all(
-                color: isExpanded
-                    ? const Color(0xFF0147D9)
-                    : Colors.grey.shade400,
+                color: const Color(0xFFE0E0E0),
+                width: 1,
               ),
             ),
             child: Row(
@@ -69,13 +58,12 @@ class _AssessmentDropdownState extends ConsumerState<AssessmentDropdown> {
                   child: Text(
                     triggerLabel,
                     style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: selectedAssessment != null || showAll
-                          ? FontWeight.w500
-                          : FontWeight.normal,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                      fontFamily: 'Poppins',
                       color: selectedAssessment != null || showAll
                           ? Colors.black87
-                          : Colors.grey,
+                          : const Color(0xFF999999),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -84,9 +72,8 @@ class _AssessmentDropdownState extends ConsumerState<AssessmentDropdown> {
                   isExpanded
                       ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
-                  color: isExpanded
-                      ? const Color(0xFF0147D9)
-                      : Colors.grey.shade600,
+                  color: const Color(0xFF999999),
+                  size: 24,
                 ),
               ],
             ),
@@ -96,21 +83,24 @@ class _AssessmentDropdownState extends ConsumerState<AssessmentDropdown> {
         // Dropdown list
         if (isExpanded)
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
+            margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFF0147D9)),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(
+                color: const Color(0xFFE0E0E0),
+                width: 1,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 8,
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.35,
+              maxHeight: MediaQuery.of(context).size.height * 0.3,
             ),
             child: ListView.builder(
               shrinkWrap: true,
@@ -129,58 +119,37 @@ class _AssessmentDropdownState extends ConsumerState<AssessmentDropdown> {
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      horizontal: 20,
+                      vertical: 16,
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFF0147D9).withValues(alpha: 0.06)
+                          ? const Color(0xFFF0F4FF)
                           : Colors.transparent,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: index < widget.assessments.length - 1
-                              ? Colors.grey.shade200
-                              : Colors.transparent,
-                        ),
-                      ),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 7.9c: Assessment name
-                              Text(
-                                assessment.name,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? const Color(0xFF0147D9)
-                                      : Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              // 7.9c: Created At date
-                              Text(
-                                'Created: ${_formatDate(assessment.createdAt)}',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          'Assessment ${index + 1}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: 'Poppins',
+                            color: isSelected
+                                ? const Color(0xFF0147D9)
+                                : Colors.black87,
                           ),
                         ),
-                        if (isSelected)
-                          const Icon(
-                            Icons.check,
-                            size: 18,
-                            color: Color(0xFF0147D9),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Created At : ${assessment.createdAt.year}-${assessment.createdAt.month.toString().padLeft(2, '0')}-${assessment.createdAt.day.toString().padLeft(2, '0')}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'Poppins',
+                            color: Colors.grey.shade600,
                           ),
+                        ),
                       ],
                     ),
                   ),

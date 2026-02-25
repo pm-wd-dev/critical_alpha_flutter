@@ -59,13 +59,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     ref.listen(authControllerProvider, (previous, next) {
       if (next.error != null) {
+        // Clear any loading state
+        ref.read(authControllerProvider.notifier).clearError();
+
+        // Show error message
         _showErrorSnackBar(
           title: 'Login Failed',
           message: next.error!.message,
         );
+
+        // Do NOT navigate anywhere on error - stay on login page
+        return;
       }
 
-      if (next.isAuthenticated) {
+      // Only navigate to home if actually authenticated without errors
+      if (next.isAuthenticated && !next.isLoading && next.error == null) {
         _showSuccessSnackBar(
           title: 'Login Successful',
           message: 'Welcome back!',

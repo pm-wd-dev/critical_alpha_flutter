@@ -57,8 +57,34 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final responseData = response.data!;
 
+      // Check for error status codes first
+      final status = responseData['status'] as int?;
+      final success = responseData['success'] as bool? ?? false;
+
+      // Handle error responses (including 500 errors)
+      if (status != null && status >= 400) {
+        final message = responseData['message'] ?? 'Login failed';
+
+        // Clear any stored credentials on server errors
+        await clearStoredData();
+
+        if (status == 401 || message.toLowerCase().contains('invalid')) {
+          return Result.failure(
+            const UnauthorizedException('Invalid email or password'),
+          );
+        } else if (status == 500 || message.toLowerCase().contains('token')) {
+          return Result.failure(
+            NetworkException('Server error: $message'),
+          );
+        }
+
+        return Result.failure(
+          NetworkException(message),
+        );
+      }
+
       // Handle React Native API response format
-      if (responseData['success'] == true && responseData['data'] != null) {
+      if (success && responseData['data'] != null) {
         final token = responseData['data']['token'] as String?;
         final userData = responseData['data']['user'] as Map<String, dynamic>?;
 

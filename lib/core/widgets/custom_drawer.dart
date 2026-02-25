@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../features/auth/controllers/auth_controller.dart';
+import '../../routes/route_constants.dart';
 import '../constants/app_assets.dart';
 import '../network/api_client.dart';
 import '../network/api_endpoints.dart';
@@ -377,12 +380,12 @@ class CustomDrawer extends ConsumerWidget {
 
                 if (context.mounted) {
                   // Navigate to login and clear all previous routes
-                  context.go('/login');
+                  context.go(RouteConstants.login);
                 }
               } catch (e) {
                 // Even if logout fails, navigate to login
                 if (context.mounted) {
-                  context.go('/login');
+                  context.go(RouteConstants.login);
                 }
               }
             },
@@ -405,7 +408,7 @@ class CustomDrawer extends ConsumerWidget {
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (BuildContext dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -428,7 +431,7 @@ class CustomDrawer extends ConsumerWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text(
               'Cancel',
               style: TextStyle(
@@ -439,54 +442,14 @@ class CustomDrawer extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-
-              // Show loading dialog
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              );
-
-              try {
-                // Call delete account API
-                final apiClient = ApiClient();
-                await apiClient.delete(ApiEndpoints.deleteAccount);
-
-                // Clear all user data
-                await ref.read(authControllerProvider.notifier).logout();
-                await ApiClient().clearTokens();
-
-                if (context.mounted) {
-                  Navigator.pop(context); // Close loading dialog
-
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Account deleted successfully'),
-                      backgroundColor: Colors.orange,
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
-
-                  // Navigate to login
-                  context.go('/login');
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  Navigator.pop(context); // Close loading dialog
-
-                  // Show error message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to delete account: ${e.toString()}'),
-                      backgroundColor: Colors.red,
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
-                }
+              // Close confirmation dialog
+              Navigator.pop(dialogContext);
+              // Wait for the dialog to close completely
+              await Future.delayed(const Duration(milliseconds: 100));
+              // Check if context is still mounted
+              if (context.mounted) {
+                // Execute deletion
+                _executeAccountDeletion(context, ref);
               }
             },
             style: TextButton.styleFrom(
@@ -503,5 +466,117 @@ class CustomDrawer extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _executeAccountDeletion(BuildContext context, WidgetRef ref) async {
+    debugPrint('🔑 Starting account deletion...');
+
+    // Show loading overlay
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext loadingContext) => PopScope(
+        canPop: false,
+        child: Container(
+          color: Colors.black54,
+          child: const Center(
+            child: Card(
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text('Deleting account...'),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Make API call
+      final apiClient = ApiClient();
+      // Ensure tokens are loaded
+      await apiClient.initializeTokens();
+
+      debugPrint('🗑️ Calling delete API...');
+      debugPrint('🔑 Auth token: ${apiClient.authToken}');
+      debugPrint('📍 Delete endpoint: ${ApiEndpoints.deleteAccount}');
+
+      final response = await apiClient.delete(ApiEndpoints.deleteAccount);
+      debugPrint('✅ API Response: ${response.data}');
+
+      // Clear local data
+      await apiClient.clearTokens();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      debugPrint('✅ Local data cleared');
+
+      // Clear auth state
+      try {
+        ref.read(authControllerProvider.notifier).clearAuthState();
+        debugPrint('✅ Auth state cleared');
+      } catch (e) {
+        debugPrint('⚠️ Error clearing auth state: $e');
+      }
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Show success and navigate
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigate to login
+        context.go(RouteConstants.login);
+        debugPrint('✅ Navigated to login');
+      }
+
+    } catch (error, stackTrace) {
+      debugPrint('❌ Delete failed: $error');
+      debugPrint('📚 Stack trace: $stackTrace');
+
+      // Clear data anyway
+      try {
+        final apiClient = ApiClient();
+        await apiClient.clearTokens();
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.clear();
+        ref.read(authControllerProvider.notifier).clearAuthState();
+      } catch (e) {
+        debugPrint('⚠️ Error during cleanup: $e');
+      }
+
+      // Close loading dialog
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Show error and navigate
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account may have been deleted. Logging out...'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+
+        // Navigate to login anyway
+        context.go(RouteConstants.login);
+        debugPrint('✅ Navigated to login after error');
+      }
+    }
   }
 }

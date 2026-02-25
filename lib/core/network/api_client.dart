@@ -70,6 +70,10 @@ class ApiClient {
     await setTokens(null, null);
   }
 
+  Future<void> initializeTokens() async {
+    await _loadStoredTokens();
+  }
+
   // Generic request method
   Future<Response<T>> request<T>(
     String path, {
@@ -294,6 +298,25 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Check for "Invalid Token" errors in response (can be 401 or 500)
+    final responseData = err.response?.data;
+    if (responseData is Map<String, dynamic>) {
+      final message = responseData['message']?.toString() ?? '';
+      final status = responseData['status'] as int? ?? err.response?.statusCode;
+
+      // Handle "Invalid Token" errors regardless of status code
+      if (message.toLowerCase().contains('invalid token') ||
+          (status == 500 && message.toLowerCase().contains('token'))) {
+        // Clear all stored credentials
+        await ApiClient().clearTokens();
+
+        // Don't retry - just pass the error through
+        // The auth state will handle navigation to login
+        handler.next(err);
+        return;
+      }
+    }
+
     if (err.response?.statusCode == 401) {
       // Token expired, try to refresh
       final refreshToken = ApiClient()._refreshToken;
@@ -351,6 +374,7 @@ class _LoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     debugPrint('🚀 REQUEST[${options.method}] => PATH: ${options.path}');
+    debugPrint('Full URL: ${options.baseUrl}${options.path}');
     debugPrint('Headers: ${options.headers}');
     debugPrint('Query Parameters: ${options.queryParameters}');
     if (options.data != null) {

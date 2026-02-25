@@ -238,16 +238,6 @@ class _AudioTracksPageState extends ConsumerState<AudioTracksPage> {
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: Icon(
-            track.isFavorite ? Icons.favorite : Icons.favorite_border,
-            color: track.isFavorite ? Colors.red : Colors.grey,
-          ),
-          onPressed: () {
-            // Toggle favorite
-            // This would need to be implemented in the controller
-          },
-        ),
       ),
       ),
     );
