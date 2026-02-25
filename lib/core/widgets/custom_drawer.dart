@@ -219,7 +219,17 @@ class CustomDrawer extends ConsumerWidget {
                     Navigator.pop(context);
                     final url = Uri.parse('mailto:admin@criticalalpha.com?subject=Feedback');
                     if (await canLaunchUrl(url)) {
-                      await launchUrl(url);
+                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                    } else {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'No mail app found. Please email us at admin@criticalalpha.com',
+                            ),
+                          ),
+                        );
+                      }
                     }
                   },
                 ),
@@ -306,11 +316,6 @@ class CustomDrawer extends ConsumerWidget {
     Color iconColor = Colors.grey,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: iconColor,
-        size: 22,
-      ),
       title: Text(
         title,
         style: TextStyle(

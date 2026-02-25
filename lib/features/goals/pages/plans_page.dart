@@ -17,29 +17,25 @@ class PlansPage extends ConsumerStatefulWidget {
 class _PlansPageState extends ConsumerState<PlansPage> {
   bool _showPlanStatus = false;
   String _statusMessage = '';
+  // 5.5: dynamic color — green for complete, red for uncomplete
+  Color _statusColor = const Color(0xFF4CAF50);
 
   @override
   void initState() {
     super.initState();
-    // Refresh plans when page loads
     Future.microtask(() {
       ref.read(plansControllerProvider.notifier).refreshPlans();
     });
   }
 
-  void _showSuccessStatus(String message) {
+  void _showStatusBanner(String message, {Color color = const Color(0xFF4CAF50)}) {
     setState(() {
       _showPlanStatus = true;
       _statusMessage = message;
+      _statusColor = color;
     });
-
-    // Hide after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _showPlanStatus = false;
-        });
-      }
+      if (mounted) setState(() => _showPlanStatus = false);
     });
   }
 
@@ -47,7 +43,6 @@ class _PlansPageState extends ConsumerState<PlansPage> {
   Widget build(BuildContext context) {
     final plansState = ref.watch(plansControllerProvider);
 
-    // Set status bar style
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -56,22 +51,22 @@ class _PlansPageState extends ConsumerState<PlansPage> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFEEF2FF),
       body: Column(
         children: [
-          // Green status header (shown when plan is completed)
+          // 5.5: Status banner — color driven by action (green/red)
           AnimatedSize(
             duration: const Duration(milliseconds: 300),
             child: Container(
               width: double.infinity,
-              color: const Color(0xFF4CAF50),
+              color: _statusColor,
               child: _showPlanStatus
                   ? SafeArea(
                       bottom: false,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 20,
-                          vertical: 16,
+                          vertical: 14,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,17 +76,17 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                               'Plan Status',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
                                 fontFamily: 'Poppins',
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 3),
                             Text(
                               _statusMessage,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontSize: 14,
+                                fontSize: 13,
                                 fontFamily: 'Poppins',
                               ),
                             ),
@@ -103,9 +98,9 @@ class _PlansPageState extends ConsumerState<PlansPage> {
             ),
           ),
 
-          // Main header
+          // Header
           Container(
-            color: Colors.white,
+            color: const Color(0xFFEEF2FF),
             child: SafeArea(
               bottom: false,
               child: Container(
@@ -132,7 +127,6 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                       ),
                     ),
 
-                    // Title
                     const Text(
                       'Plans',
                       style: TextStyle(
@@ -143,7 +137,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                       ),
                     ),
 
-                    // CriticalAlpha icon - Opens Drawer
+                    // 5.1: App logo — 40×40 circle, 7px padding for visible icon
                     GestureDetector(
                       onTap: () => openDrawer(),
                       child: Container(
@@ -156,7 +150,7 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(20),
                           child: Padding(
-                            padding: const EdgeInsets.all(8),
+                            padding: const EdgeInsets.all(7),
                             child: Image.asset(
                               AppAssets.drawerIcon,
                               fit: BoxFit.contain,
@@ -175,77 +169,99 @@ class _PlansPageState extends ConsumerState<PlansPage> {
           Expanded(
             child: plansState.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : Stack(
-                    children: [
-                      // Plans list or empty state
-                      if (plansState.plans.isEmpty)
-                        _buildEmptyState()
-                      else
-                        SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
-                          child: Column(
-                            children: [
-                              // All plan cards
-                              ...plansState.plans.map((plan) => _buildPlanCard(plan)),
-                              // Clear All button below the last item
-                              if (plansState.plans.isNotEmpty) ...[
-                                const SizedBox(height: 20),
-                                GestureDetector(
-                                  onTap: _showClearAllDialog,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 36,
-                                      vertical: 10,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF0147D9),
-                                      borderRadius: BorderRadius.circular(25),
-                                    ),
-                                    child: const Text(
-                                      'Clear All',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        fontFamily: 'Poppins',
+                : Container(
+                    margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0x14000000),
+                          blurRadius: 12,
+                          offset: Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        if (plansState.plans.isEmpty)
+                          Positioned.fill(
+                            child: _buildEmptyState(),
+                          )
+                        else
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
+                              ),
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+                                child: Column(
+                                  children: [
+                                    ...plansState.plans.map((plan) => _buildPlanCard(plan)),
+                                    const SizedBox(height: 24),
+                                    GestureDetector(
+                                      onTap: _showClearAllDialog,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 40,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF0147D9),
+                                          borderRadius: BorderRadius.circular(30),
+                                        ),
+                                        child: const Text(
+                                          'Clear All',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                            fontFamily: 'Poppins',
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ],
+                              ),
+                            ),
                           ),
-                        ),
 
-                      // Floating Action Button - positioned above bottom nav
-                      Positioned(
-                        bottom: 16,
-                        right: 20,
-                        child: GestureDetector(
-                          onTap: () => context.push('/goals/create'),
-                          child: Container(
-                            width: 56,
-                            height: 56,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF0147D9),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Color(0x3D0147D9),
-                                  blurRadius: 12,
-                                  offset: Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.add,
-                              color: Colors.white,
-                              size: 28,
+                        // FAB — positioned above bottom nav
+                        Positioned(
+                          bottom: 24,
+                          right: 20,
+                          child: GestureDetector(
+                            onTap: () => context.push('/goals/create'),
+                            child: Container(
+                              width: 56,
+                              height: 56,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF0147D9),
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(0x3D0147D9),
+                                    blurRadius: 12,
+                                    offset: Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.add,
+                                color: Colors.white,
+                                size: 28,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
           ),
         ],
@@ -253,112 +269,121 @@ class _PlansPageState extends ConsumerState<PlansPage> {
     );
   }
 
+  // 5.2: iOS-matched empty state with image asset
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.folder_open_rounded,
-            size: 80,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No Plans Yet',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
-              fontFamily: 'Poppins',
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 220,
+                height: 220,
+                color: Colors.transparent,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Image.asset(
+                    AppAssets.goalsImage,
+                    width: 220,
+                    height: 220,
+                    errorBuilder: (_, __, ___) => Icon(
+                      Icons.assignment_outlined,
+                      size: 100,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tap + to create your first plan',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-              fontFamily: 'Poppins',
+            const SizedBox(height: 8,),
+            const Text(
+              'Add Your First Plan',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+                color: Colors.black87,
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
     );
   }
 
+  // Plan card — two-tile layout matching design
   Widget _buildPlanCard(PlanModel plan) {
     final isComplete = plan.status == 'true';
+    const tileColor = Color(0xFFDDE6F5);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: () {
-            // Navigate to plan detail page
-            context.push('/plan/${plan.id}');
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-            child: Row(
-              children: [
-                // Plan title
-                Expanded(
-                  child: Text(
-                    plan.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Poppins',
-                      color: isComplete ? Colors.grey : Colors.black87,
-                      decoration: isComplete ? TextDecoration.lineThrough : null,
-                    ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Left: title tile (tappable → detail)
+          Expanded(
+            child: GestureDetector(
+              onTap: () => context.push('/plan/${plan.id}'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: tileColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  plan.title,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Poppins',
+                    color: isComplete ? Colors.grey : Colors.black87,
+                    decoration: isComplete
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
                   ),
                 ),
-
-                // Checkmark button
-                GestureDetector(
-                  onTap: () async {
-                    await ref.read(plansControllerProvider.notifier)
-                        .updatePlanStatus(plan.id, !isComplete);
-
-                    if (!isComplete) {
-                      _showSuccessStatus('Plan Completed Successfully');
-                    }
-                  },
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: isComplete
-                          ? const Color(0xFF0147D9)
-                          : const Color(0xFF0147D9).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.check,
-                      color: isComplete ? Colors.white : const Color(0xFF0147D9),
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
+
+          const SizedBox(width: 8),
+
+          // Right: checkbox tile
+          GestureDetector(
+            onTap: () async {
+              final wasComplete = isComplete;
+              await ref
+                  .read(plansControllerProvider.notifier)
+                  .updatePlanStatus(plan.id, !isComplete);
+              if (!wasComplete) {
+                _showStatusBanner(
+                  'Plan Completed Successfully',
+                  color: const Color(0xFF4CAF50),
+                );
+              } else {
+                _showStatusBanner(
+                  'Plan set to uncomplete successfully',
+                  color: Colors.red,
+                );
+              }
+            },
+            child: Container(
+              width: 64,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                color: isComplete ? const Color(0xFF0147D9) : tileColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.check,
+                size: 24,
+                color: Colors.white
+              ),
+            ),
+          ),
+        ],
         ),
       ),
     );
@@ -400,11 +425,12 @@ class _PlansPageState extends ConsumerState<PlansPage> {
             onPressed: () {
               Navigator.pop(context);
               ref.read(plansControllerProvider.notifier).deleteAllPlans();
-              _showSuccessStatus('All Plans Cleared');
+              _showStatusBanner(
+                'All Plans Cleared',
+                color: const Color(0xFF4CAF50),
+              );
             },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.red,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text(
               'Clear All',
               style: TextStyle(

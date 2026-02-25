@@ -3,10 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/custom_drawer.dart';
+import '../../../core/widgets/custom_floating_bottom_nav.dart';
 import '../models/plan_model.dart';
 import '../providers/plan_providers.dart';
 import '../services/plan_service.dart';
-import '../widgets/assessment_status_widget.dart';
 import '../../results/widgets/assessment_line_chart.dart';
 import '../../results/services/results_api_service.dart';
 
@@ -32,9 +33,16 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
 
   bool _isLoading = false;
   bool _showResults = false;
+  bool _isLoadingChart = false;
   PlanModel? _plan;
   List<dynamic> _assessments = [];
   Map<String, dynamic>? _chartData;
+  String? _selectedAssessmentId;
+
+  // 5.6: Validation banner state
+  bool _showValidationBanner = false;
+  String _validationHeading = '';
+  String _validationMessage = '';
 
   @override
   void initState() {
@@ -42,10 +50,21 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     _loadPlanDetails();
   }
 
+  // 5.6: Show top-of-screen validation banner (matches plans_page pattern)
+  void _showBanner({required String heading, required String message}) {
+    setState(() {
+      _showValidationBanner = true;
+      _validationHeading = heading;
+      _validationMessage = message;
+    });
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _showValidationBanner = false);
+    });
+  }
+
   Future<void> _loadPlanDetails() async {
     setState(() => _isLoading = true);
     try {
-      // Load plan details
       final plan = await _planService.getPlanById(widget.planId);
       if (plan != null) {
         setState(() {
@@ -57,48 +76,44 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
         });
       }
 
-      // Load assessments
       final assessments = await _planService.getUserAssessments(widget.planId);
       setState(() {
         _assessments = assessments;
-        // Only show results if there are assessments
-        _showResults = false;
+        if (assessments.isNotEmpty) {
+          _selectedAssessmentId = assessments.last['_id'] as String?;
+          _showResults = true;
+        }
       });
 
-      // Load chart data if assessments exist
       if (assessments.isNotEmpty) {
         await _loadChartData();
       }
     } catch (e) {
-      print('Error loading plan: $e');
+      // ignore: avoid_print
+      debugPrint('Error loading plan: $e');
     } finally {
       setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _loadChartData() async {
+  Future<void> _loadChartData({String? assessmentId}) async {
+    final id = assessmentId ?? _selectedAssessmentId ?? '12122122';
+    setState(() => _isLoadingChart = true);
     try {
-      // If we have assessments, use the latest one's ID for the chart
-      String assessmentId = '12122122'; // Default ID for all assessments view
-      if (_assessments.isNotEmpty && _assessments.last['_id'] != null) {
-        // Get the latest assessment ID
-        assessmentId = _assessments.last['_id'] as String;
-      }
-
-      // Get all assessments line chart data for this plan
       final chartData = await _resultsApiService.getLineChartData(
-        assessmentId: assessmentId,
+        assessmentId: id,
         type: 'all',
         planId: widget.planId,
       );
 
       if (mounted) {
-        setState(() {
-          _chartData = chartData;
-        });
+        setState(() => _chartData = chartData);
       }
     } catch (e) {
-      print('Error loading chart data: $e');
+      // ignore: avoid_print
+      debugPrint('Error loading chart data: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingChart = false);
     }
   }
 
@@ -108,45 +123,44 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     final navigate = _navigateController.text.trim();
     final elevate = _elevateController.text.trim();
 
-    // Validation
+    // Validation — all use the banner with heading "Invalid values"
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Plan name shouldn't be empty"),
-          backgroundColor: Colors.red,
-        ),
+      _showBanner(
+        heading: 'Invalid values',
+        message: "Plan name shouldn't be empty",
       );
       return;
     }
 
     if (aim.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("AIM shouldn't be empty"),
-          backgroundColor: Colors.red,
-        ),
+      _showBanner(
+        heading: 'Invalid values',
+        message: "AIM shouldn't be empty",
       );
       return;
     }
 
     if (navigate.isEmpty || navigate.length < 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("NAVIGATE should have a minimum of 5 characters"),
-          backgroundColor: Colors.red,
-        ),
+      _showBanner(
+        heading: 'Invalid values',
+        message: 'NAVIGATE should have a minimum of 5 characters',
       );
       return;
     }
 
-    // Only validate ELEVATE if assessments exist
+    // 5.6: ELEVATE validation
     if (_assessments.isNotEmpty) {
-      if (elevate.isEmpty || elevate.length < 5) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("ELEVATE should have a minimum of 5 characters"),
-            backgroundColor: Colors.red,
-          ),
+      if (elevate.isEmpty) {
+        _showBanner(
+          heading: 'Invalid values',
+          message: "ELEVATE shouldn't empty",
+        );
+        return;
+      }
+      if (elevate.length < 5) {
+        _showBanner(
+          heading: 'Invalid values',
+          message: 'ELEVATE should have a minimum of 5 characters',
         );
         return;
       }
@@ -155,7 +169,6 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Pass elevate even if empty for plans without assessments
       final success = await _planService.updatePlan(
         planId: widget.planId,
         title: title,
@@ -164,16 +177,24 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
         improve: _assessments.isNotEmpty ? elevate : (_plan?.improve ?? ''),
       );
 
+      if (!mounted) return;
       if (success) {
+        // 5.7: Exact success message format
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$title Plan Edited Successfully'),
+            content: Text('$title plan edited successfully.'),
             backgroundColor: Colors.green,
           ),
         );
-        context.pop();
+        // 5.7: Navigate back to plans screen
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/goals');
+        }
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to update plan: $e'),
@@ -214,7 +235,7 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
           color: AppColors.primary.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
-        child: Icon(
+        child: const Icon(
           Icons.info_outline,
           size: 14,
           color: AppColors.primary,
@@ -250,35 +271,58 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
           ],
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          maxLines: maxLines,
-          maxLength: maxLines > 1 ? maxLength : null,
-          style: const TextStyle(fontSize: 14),
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: const Color(0xFFE3F2FD),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide.none,
-            ),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: maxLines > 1 ? 12 : 14,
-            ),
-            counterText: maxLines > 1 ? null : '',
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.30),
+                blurRadius: 2.32,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
-          buildCounter: maxLines > 1
-              ? (context, {required currentLength, required isFocused, maxLength}) {
-                  return Text(
-                    'Characters $currentLength/$maxLength',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  );
-                }
-              : null,
+          child: TextField(
+            controller: controller,
+            maxLines: maxLines,
+            maxLength: maxLines > 1 ? maxLength : null,
+            style: const TextStyle(fontSize: 14),
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Colors.transparent,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: Color(0xFF0147D9),
+                  width: 1.5,
+                ),
+              ),
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: maxLines > 1 ? 12 : 14,
+              ),
+              counterText: maxLines > 1 ? null : '',
+            ),
+            buildCounter: maxLines > 1
+                ? (context,
+                    {required currentLength,
+                    required isFocused,
+                    maxLength}) {
+                    return Text(
+                      'Characters $currentLength/$maxLength',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    );
+                  }
+                : null,
+          ),
         ),
       ],
     );
@@ -287,7 +331,10 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      // 5.8: Gray background — iOS-standard form background
+      backgroundColor: const Color(0xFFF5F5F5),
+      drawer: const CustomDrawer(),
+      bottomNavigationBar: const CustomFloatingBottomNav(),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -310,221 +357,417 @@ class _PlanDetailPageState extends ConsumerState<PlanDetailPage> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.black),
-            onPressed: () => Scaffold.of(context).openEndDrawer(),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () => Scaffold.of(context).openDrawer(),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0147D9),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Image.asset(
+                      AppAssets.drawerIcon,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Plan Name
-                  _buildTextField(
-                    label: 'PLAN NAME:',
-                    controller: _titleController,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // AIM
-                  _buildTextField(
-                    label: 'AIM:',
-                    controller: _aimController,
-                    info: 'Align your goals with your mission. Innovate your strategies to achieve your goals. Measureable indicators of success to track & improve.',
-                    maxLines: 6,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // NAVIGATE
-                  _buildTextField(
-                    label: 'NAVIGATE:',
-                    controller: _navigateController,
-                    info: 'Write down the possible challenges that you will face and visualise effective tactics to overcome these adversities so that you are well prepared.',
-                    maxLines: 6,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // ALPHA PERFORMANCE
-                  const Text(
-                    'ALPHA PERFORMANCE:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  // Assessment Status
-                  AssessmentStatusWidget(
-                    assessmentCount: _assessments.length,
-                    lastAssessmentDate: _assessments.isNotEmpty
-                        ? _assessments.last['createdAt']?.toString().substring(0, 10)
-                        : null,
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            // Save plan ID to be used in assessment
-                            ref.read(currentPlanProvider.notifier).state = _plan;
-                            context.push('/assessment/${widget.planId}');
-                          },
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: AppColors.primary),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: Text(
-                            'Start Assessment',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_assessments.isNotEmpty) ...[
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () async {
-                              if (!_showResults && _chartData == null) {
-                                await _loadChartData();
-                              }
-                              setState(() {
-                                _showResults = !_showResults;
-                              });
-                            },
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: AppColors.primary),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: Text(
-                              _showResults ? 'Hide Results' : 'View Results',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-
-                  // Results Section - Only show when assessments exist AND results are toggled on
-                  if (_assessments.isNotEmpty && _showResults) ...[
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Result',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _chartData != null && _chartData!.isNotEmpty
-                        ? AssessmentLineChart(
-                            chartData: _chartData!,
-                            type: 'all',
-                          )
-                        : Container(
-                            height: 200,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: const Text(
-                              'No chart data available',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-
-                    const SizedBox(height: 20),
-
-                    // ELEVATE - Only show when assessments exist
-                    _buildTextField(
-                      label: 'ELEVATE:',
-                      controller: _elevateController,
-                      info: 'Focus on implementing actions to enhance your performance and continually improve your results for next time. Through regular self-assessment, seeking feedback, and adjusting your strategies, you can achieve ongoing improvement.',
-                      maxLines: 6,
-                    ),
-                  ],
-
-                  const SizedBox(height: 32),
-
-                  // Bottom Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: TextButton(
-                          onPressed: () => context.pop(),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              color: Colors.red,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      SizedBox(
-                        width: 120,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _updatePlan,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text(
-                            'Update',
-                            style: TextStyle(
+      body: Column(
+        children: [
+          // 5.6: Validation banner (red, heading + message)
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            child: Container(
+              width: double.infinity,
+              color: Colors.red,
+              child: _showValidationBanner
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            _validationHeading,
+                            style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ),
+                          const SizedBox(height: 3),
+                          Text(
+                            _validationMessage,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-                ],
-              ),
+                    )
+                  : const SizedBox.shrink(),
             ),
+          ),
+
+          // Main content
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 5.8: White card wrapping all form fields (iOS grouped form style)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: const Color(0xFFE8E8E8),
+                              width: 0.8,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              _buildTextField(
+                                label: 'PLAN NAME:',
+                                controller: _titleController,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildTextField(
+                                label: 'AIM:',
+                                controller: _aimController,
+                                info: 'Align your goals with your mission. Innovate your strategies to achieve your goals. Measureable indicators of success to track & improve.',
+                                maxLines: 6,
+                              ),
+                              const SizedBox(height: 16),
+                              _buildTextField(
+                                label: 'NAVIGATE:',
+                                controller: _navigateController,
+                                info: 'Write down the possible challenges that you will face and visualise effective tactics to overcome these adversities so that you are well prepared.',
+                                maxLines: 6,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // ALPHA PERFORMANCE section — no card wrapper
+                        const Text(
+                          'ALPHA PERFORMANCE:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Assessment Taken row with 5 circles
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Assessment Taken',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            Row(
+                              children: List.generate(5, (index) {
+                                final isFilled = index < _assessments.length;
+                                return Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isFilled
+                                        ? const Color(0xFF0147D9)
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: const Color(0xFF0147D9),
+                                      width: 2,
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _assessments.isEmpty
+                              ? 'You have not assessed your plan yet'
+                              : 'You have completed ${_assessments.length} assessment${_assessments.length > 1 ? 's' : ''}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Buttons row: Start Assessment + View/Hide Results
+                        Row(
+                          children: [
+                            OutlinedButton(
+                              onPressed: () {
+                                ref.read(currentPlanProvider.notifier).state = _plan;
+                                context.push('/assessment/${widget.planId}');
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF0147D9)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: const Text(
+                                'Start Assessment',
+                                style: TextStyle(
+                                  color: Color(0xFF0147D9),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            if (_assessments.isNotEmpty) ...[
+                              const SizedBox(width: 10),
+                              OutlinedButton(
+                                onPressed: () {
+                                  setState(() => _showResults = !_showResults);
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFF0147D9)),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  _showResults ? 'Hide Results' : 'View Results',
+                                  style: const TextStyle(
+                                    color: Color(0xFF0147D9),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+
+                        // Result + ELEVATE — shown when _showResults is true
+                        if (_showResults) ...[
+                          const SizedBox(height: 20),
+
+                          // Result header
+                          const Text(
+                            'Result',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+
+                          // Assessment dropdown
+                          if (_assessments.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: const Color(0xFFDDDDDD)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.22),
+                                    blurRadius: 2.22,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: DropdownButtonHideUnderline(
+                                child: DropdownButton<String>(
+                                  value: _selectedAssessmentId,
+                                  isExpanded: true,
+                                  icon: const Icon(
+                                    Icons.keyboard_arrow_down,
+                                    color: Color(0xFF0147D9),
+                                  ),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                  items: _assessments.map((a) {
+                                    final id = a['_id'] as String? ?? '';
+                                    final raw = a['createdAt']?.toString() ?? '';
+                                    final date = raw.length >= 10
+                                        ? raw.substring(0, 10)
+                                        : 'Unknown';
+                                    return DropdownMenuItem<String>(
+                                      value: id,
+                                      child: Text('Assessment — $date'),
+                                    );
+                                  }).toList(),
+                                  onChanged: (id) {
+                                    if (id != null &&
+                                        id != _selectedAssessmentId) {
+                                      setState(
+                                          () => _selectedAssessmentId = id);
+                                      _loadChartData(assessmentId: id);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 10),
+
+                          // Chart or no-data box
+                          _isLoadingChart
+                              ? const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              : _chartData != null && _chartData!.isNotEmpty
+                                  ? AssessmentLineChart(
+                                      chartData: _chartData!,
+                                      type: 'all',
+                                    )
+                                  : Container(
+                                      height: 120,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF0F0F0),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                      ),
+                                      child: const Text(
+                                        'No Data Available For This User',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ),
+                          const SizedBox(height: 20),
+
+                          // ELEVATE field
+                          _buildTextField(
+                            label: 'ELEVATE:',
+                            controller: _elevateController,
+                            info: 'Focus on implementing actions to enhance your performance and continually improve your results for next time. Through regular self-assessment, seeking feedback, and adjusting your strategies, you can achieve ongoing improvement.',
+                            maxLines: 6,
+                          ),
+                        ],
+
+                        const SizedBox(height: 24),
+
+                        // 5.9: Cancel (left, text) + Update (right, expanded primary button)
+                        Row(
+                          children: [
+                            ElevatedButton(
+                              onPressed: () {
+                                    if (context.canPop()) {
+                                      context.pop();
+                                    } else {
+                                      context.go('/goals');
+                                    }
+                                  },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                disabledBackgroundColor: const Color(0xFF0147D9),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 40, vertical: 2),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              child: const Text(
+                                'Cancel',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red,
+                                ),
+                              ),
+                            ),
+                          
+                            const Spacer(),
+                            // 6.5: Show spinner when creating; button stays blue (no grey-out)
+                            ElevatedButton(
+                               onPressed: _isLoading ? null : _updatePlan,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF0147D9),
+                                disabledBackgroundColor: const Color(0xFF0147D9),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 40, vertical: 2),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                              ),
+                              child:_isLoading
+                                  ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                  : const Text(
+                                      'Update',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                           
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 

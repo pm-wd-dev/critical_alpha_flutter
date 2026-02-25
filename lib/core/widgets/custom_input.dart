@@ -154,49 +154,64 @@ class _CustomInputState extends State<CustomInput> {
   }
 
   Widget _buildTextField() {
-    return TextFormField(
-      controller: _controller,
-      focusNode: _focusNode,
-      enabled: widget.isEnabled,
-      readOnly: widget.isReadOnly,
-      autofocus: widget.autofocus,
-      obscureText: _obscureText,
-      maxLines: _getMaxLines(),
-      minLines: widget.minLines,
-      maxLength: widget.maxLength,
-      keyboardType: _getKeyboardType(),
-      textInputAction: widget.textInputAction ?? _getTextInputAction(),
-      textCapitalization: widget.textCapitalization,
-      inputFormatters: widget.inputFormatters ?? _getInputFormatters(),
-      validator: widget.validator,
-      onChanged: widget.onChanged,
-      onFieldSubmitted: widget.onSubmitted,
-      onTap: widget.onTap,
-      decoration: InputDecoration(
-        hintText: widget.hintText,
-        helperText: widget.helperText,
-        errorText: widget.errorText,
-        prefixIcon: widget.prefixIcon,
-        suffixIcon: _buildSuffixIcon(),
-        prefixText: widget.prefixText,
-        suffixText: widget.suffixText,
-        filled: true,
-        fillColor: widget.fillColor ??
-                   (widget.isEnabled ? AppColors.white : AppColors.grey50),
-        border: _buildBorder(),
-        enabledBorder: _buildBorder(),
-        focusedBorder: _buildBorder(isFocused: true),
-        errorBorder: _buildBorder(isError: true),
-        focusedErrorBorder: _buildBorder(isError: true, isFocused: true),
-        disabledBorder: _buildBorder(isDisabled: true),
-        contentPadding: widget.contentPadding ?? const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.fillColor ??
+               (widget.isEnabled ? AppColors.white : AppColors.grey50),
+        borderRadius: BorderRadius.circular(
+          widget.borderRadius ?? AppBorderRadius.medium,
         ),
-        counterText: widget.maxLength != null ? null : '',
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.30),
+            blurRadius: 2.32,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: widget.isEnabled ? AppColors.textPrimary : AppColors.textTertiary,
+      child: TextFormField(
+        controller: _controller,
+        focusNode: _focusNode,
+        enabled: widget.isEnabled,
+        readOnly: widget.isReadOnly,
+        autofocus: widget.autofocus,
+        obscureText: _obscureText,
+        maxLines: _getMaxLines(),
+        minLines: widget.minLines,
+        maxLength: widget.maxLength,
+        keyboardType: _getKeyboardType(),
+        textInputAction: widget.textInputAction ?? _getTextInputAction(),
+        textCapitalization: widget.textCapitalization,
+        inputFormatters: widget.inputFormatters ?? _getInputFormatters(),
+        validator: widget.validator,
+        onChanged: widget.onChanged,
+        onFieldSubmitted: widget.onSubmitted,
+        onTap: widget.onTap,
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          helperText: widget.helperText,
+          errorText: widget.errorText,
+          prefixIcon: widget.prefixIcon,
+          suffixIcon: _buildSuffixIcon(),
+          prefixText: widget.prefixText,
+          suffixText: widget.suffixText,
+          filled: true,
+          fillColor: Colors.transparent,
+          border: _buildBorder(),
+          enabledBorder: _buildBorder(),
+          focusedBorder: _buildBorder(isFocused: true),
+          errorBorder: _buildBorder(isError: true),
+          focusedErrorBorder: _buildBorder(isError: true, isFocused: true),
+          disabledBorder: _buildBorder(isDisabled: true),
+          contentPadding: widget.contentPadding ?? const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+          counterText: widget.maxLength != null ? null : '',
+        ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: widget.isEnabled ? AppColors.textPrimary : AppColors.textTertiary,
+        ),
       ),
     );
   }

@@ -135,6 +135,16 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       // Assessment Dropdown
                       AssessmentDropdown(assessments: assessments),
 
+                      // 7.9d: Show All / Show Individual button always visible above chart
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        child: Consumer(
+                          builder: (context, ref, _) =>
+                              _buildShowAllButton(context, ref),
+                        ),
+                      ),
+
                       // Main Content Area
                       Expanded(
                         child: SingleChildScrollView(
@@ -157,11 +167,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                               if (!showAll && selectedAssessment != null)
                                 Consumer(
                                   builder: (context, ref, child) {
-                                    final chartDataAsync = ref.watch(chartDataProvider);
+                                    final chartDataAsync =
+                                        ref.watch(chartDataProvider);
 
                                     return chartDataAsync.when(
                                       data: (chartData) {
-                                        if (chartData == null || chartData.isEmpty) {
+                                        if (chartData == null ||
+                                            chartData.isEmpty) {
                                           return const Padding(
                                             padding: EdgeInsets.all(32.0),
                                             child: Text(
@@ -174,16 +186,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                           );
                                         }
 
-                                        return Column(
-                                          children: [
-                                            AssessmentLineChart(
-                                              chartData: chartData,
-                                              type: 'single',
-                                              selectedAssessmentName: selectedAssessment.name,
-                                            ),
-                                            const SizedBox(height: 20),
-                                            _buildShowAllButton(context, ref),
-                                          ],
+                                        return AssessmentLineChart(
+                                          chartData: chartData,
+                                          type: 'single',
+                                          selectedAssessmentName:
+                                              selectedAssessment.name,
                                         );
                                       },
                                       loading: () => const Padding(
@@ -194,7 +201,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                         padding: const EdgeInsets.all(32.0),
                                         child: Text(
                                           'Error loading chart: $error',
-                                          style: const TextStyle(color: Colors.red),
+                                          style: const TextStyle(
+                                              color: Colors.red),
                                         ),
                                       ),
                                     );
@@ -205,11 +213,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                               if (showAll)
                                 Consumer(
                                   builder: (context, ref, child) {
-                                    final allChartsAsync = ref.watch(allChartsDataProvider);
+                                    final allChartsAsync =
+                                        ref.watch(allChartsDataProvider);
 
                                     return allChartsAsync.when(
                                       data: (chartData) {
-                                        if (chartData == null || chartData.isEmpty) {
+                                        if (chartData == null ||
+                                            chartData.isEmpty) {
                                           return const Padding(
                                             padding: EdgeInsets.all(32.0),
                                             child: Text(
@@ -222,15 +232,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                           );
                                         }
 
-                                        return Column(
-                                          children: [
-                                            AssessmentLineChart(
-                                              chartData: chartData,
-                                              type: 'all',
-                                            ),
-                                            const SizedBox(height: 20),
-                                            _buildShowAllButton(context, ref),
-                                          ],
+                                        return AssessmentLineChart(
+                                          chartData: chartData,
+                                          type: 'all',
                                         );
                                       },
                                       loading: () => const Padding(
@@ -241,12 +245,15 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                         padding: const EdgeInsets.all(32.0),
                                         child: Text(
                                           'Error loading charts: $error',
-                                          style: const TextStyle(color: Colors.red),
+                                          style: const TextStyle(
+                                              color: Colors.red),
                                         ),
                                       ),
                                     );
                                   },
                                 ),
+
+                              const SizedBox(height: 20),
                             ],
                           ),
                         ),

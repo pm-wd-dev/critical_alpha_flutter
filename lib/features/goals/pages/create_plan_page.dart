@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_assets.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/custom_drawer.dart';
 import '../controllers/plans_controller.dart';
 import '../models/plan_model.dart';
 
@@ -57,9 +60,13 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     try {
       await ref.read(plansControllerProvider.notifier).createPlan(request);
       if (mounted) {
-        // Refresh the plans list
-        await ref.read(plansControllerProvider.notifier).loadPlans();
-        // Navigate back
+        // 6.4: Show success message before navigating back
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Plan Created Successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
         context.pop();
       }
     } catch (e) {
@@ -74,7 +81,27 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
     }
   }
 
-  void _showInfoTooltip(BuildContext context, String title, String message) {
+  // 6.3: Info icon — 20px circle, placed inline next to label (matches plan_detail_page pattern)
+  Widget _buildInfoIcon(String title, String message) {
+    return GestureDetector(
+      onTap: () => _showInfoTooltip(title, message),
+      child: Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.info_outline,
+          size: 14,
+          color: AppColors.primary,
+        ),
+      ),
+    );
+  }
+
+  void _showInfoTooltip(String title, String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -126,10 +153,12 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F5),
+      // 6.1: Drawer added to support logo button tap
+      drawer: const CustomDrawer(),
       body: SafeArea(
         child: Column(
           children: [
-            // Custom Header
+            // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               child: Row(
@@ -144,7 +173,7 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back_ios_new,
-                        color: Colors.white, size: 18),
+                          color: Colors.white, size: 18),
                       onPressed: () => context.pop(),
                     ),
                   ),
@@ -160,311 +189,375 @@ class _CreatePlanPageState extends ConsumerState<CreatePlanPage> {
                       ),
                     ),
                   ),
-                  // Profile icon
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF0147D9),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.person,
-                      color: Colors.white,
-                      size: 20,
+                  // 6.1: App logo replaces profile icon
+                  GestureDetector(
+                    onTap: () => Scaffold.of(context).openDrawer(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF0147D9),
+                        shape: BoxShape.circle,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.all(7),
+                          child: Image.asset(
+                            AppAssets.drawerIcon,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
+
             // Form Content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Plan Name
-                        const Text(
-                          'Plan Name:',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Poppins',
+                padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 12),
+                child: Column(
+                  children: [
+                    Form(
+                      key: _formKey,
+                      // 6.2: Outer card with subtle border + elevation
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFE8E8E8),
+                            width: 0.8,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 10),
-                        TextFormField(
-                          controller: _titleController,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFFF9F9F9),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFE0E0E0),
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFE0E0E0),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF0147D9),
-                                width: 2,
-                              ),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter a plan name';
-                            }
-                            if (value.trim().length < 2) {
-                              return 'Plan name must be at least 2 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 30),
-
-                        // AIM
-                        Row(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Plan Name
+                            // 6.3: fontSize 16 → 14
                             const Text(
-                              'AIM:',
+                              'PLAN NAME:',
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w600,
+                                color: Colors.black87,
                                 fontFamily: 'Poppins',
                               ),
                             ),
-                            const Spacer(),
-                            IconButton(
-                              icon: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF0147D9),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.info_outline,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
+                            const SizedBox(height: 8),
+                            // 6.2: iOS-style field — light blue fill, no resting border
+                            Container(
+                              decoration: BoxDecoration(
+                                color:Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.30),
+                                    blurRadius: 2.32,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
                               ),
-                              onPressed: () {
-                                _showInfoTooltip(
-                                  context,
+                              child: TextFormField(
+                                controller: _titleController,
+                                style: const TextStyle(fontSize: 14),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF0147D9),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: Colors.red),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Colors.red, width: 1.5),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 14),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter a plan name';
+                                  }
+                                  if (value.trim().length < 2) {
+                                    return 'Plan name must be at least 2 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                    
+                            // AIM — 6.3: label inline with info icon
+                            Row(
+                              children: [
+                                const Text(
+                                  'AIM:',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _buildInfoIcon(
                                   'AIM',
                                   'Align your goals with your mission. Innovate your strategies to achieve your goals. Measureable indicators of success to track & improve.',
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        TextFormField(
-                          controller: _aimController,
-                          maxLines: 8,
-                          maxLength: _maxAimChars,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFFF9F9F9),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFE0E0E0),
-                              ),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFE0E0E0),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF0147D9),
-                                width: 2,
-                              ),
-                            ),
-                            counterText: '',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your AIM';
-                            }
-                            if (value.trim().length < 5) {
-                              return 'AIM must be at least 5 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            'Characters $_aimCharCount/$_maxAimChars',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 30),
-
-                        // NAVIGATE
-                        Row(
-                          children: [
-                            const Text(
-                              'NAVIGATE:',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: 'Poppins',
-                              ),
-                            ),
-                            const Spacer(),
-                            IconButton(
-                              icon: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF0147D9),
-                                  shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
-                                  Icons.info_outline,
-                                  color: Colors.white,
-                                  size: 16,
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color:Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.30),
+                                    blurRadius: 2.32,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: TextFormField(
+                                controller: _aimController,
+                                maxLines: 8,
+                                maxLength: _maxAimChars,
+                                style: const TextStyle(fontSize: 14),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF0147D9),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: Colors.red),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Colors.red, width: 1.5),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                  counterText: '',
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your AIM';
+                                  }
+                                  if (value.trim().length < 5) {
+                                    return 'AIM must be at least 5 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'Characters $_aimCharCount/$_maxAimChars',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
                                 ),
                               ),
-                              onPressed: () {
-                                _showInfoTooltip(
-                                  context,
+                            ),
+                            const SizedBox(height: 24),
+                    
+                            // NAVIGATE — 6.3: label inline with info icon
+                            Row(
+                              children: [
+                                const Text(
+                                  'NAVIGATE:',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                _buildInfoIcon(
                                   'NAVIGATE',
                                   'Write down the possible challenges that you will face and visualise effective tactics to overcome these strategies so that you are well prepared.',
-                                );
-                              },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color:Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.30),
+                                    blurRadius: 2.32,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                              child: TextFormField(
+                                controller: _navigateController,
+                                maxLines: 8,
+                                maxLength: _maxNavigateChars,
+                                style: const TextStyle(fontSize: 14),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.white,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: BorderSide.none,
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF0147D9),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: Colors.red),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(
+                                        color: Colors.red, width: 1.5),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                  counterText: '',
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Please enter your NAVIGATE plan';
+                                  }
+                                  if (value.trim().length < 5) {
+                                    return 'NAVIGATE must be at least 5 characters';
+                                  }
+                                  return null;
+                                },
+                              ),
+                            ),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                'Characters $_navigateCharCount/$_maxNavigateChars',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        TextFormField(
-                          controller: _navigateController,
-                          maxLines: 8,
-                          maxLength: _maxNavigateChars,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: const Color(0xFFF9F9F9),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFE0E0E0),
-                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 20,),
+                    Row(
+                      children: [
+                        ElevatedButton(
+                          onPressed: plansState.isCreating ? null : _createPlan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            disabledBackgroundColor: const Color(0xFF0147D9),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFFE0E0E0),
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide: const BorderSide(
-                                color: Color(0xFF0147D9),
-                                width: 2,
-                              ),
-                            ),
-                            counterText: '',
                           ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter your NAVIGATE plan';
-                            }
-                            if (value.trim().length < 5) {
-                              return 'NAVIGATE must be at least 5 characters';
-                            }
-                            return null;
-                          },
-                        ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: Text(
-                            'Characters $_navigateCharCount/$_maxNavigateChars',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red,
                             ),
                           ),
                         ),
-
+                        const Spacer(),
+                        // 6.5: Show spinner when creating; button stays blue (no grey-out)
+                        ElevatedButton(
+                          onPressed: plansState.isCreating ? null : _createPlan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0147D9),
+                            disabledBackgroundColor: const Color(0xFF0147D9),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 2),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                          child: plansState.isCreating
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  'Add',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                        ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-              ),
-            ),
-
-            // Bottom Buttons
-            Container(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  // Cancel Button
-                  TextButton(
-                    onPressed: () => context.pop(),
-                    child: const Text(
-                      'Cancel',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  // Add Button
-                  ElevatedButton(
-                    onPressed: plansState.isCreating ? null : _createPlan,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0147D9),
-                      padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                    ),
-                    child: Text(
-                      plansState.isCreating ? 'Creating...' : 'Add',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
+                
               ),
             ),
           ],

@@ -227,7 +227,10 @@ class ApiClient {
 
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode ?? 0;
-        final message = e.response?.data?['message'] ?? 'Unknown error occurred';
+        final responseData = e.response?.data;
+        final message = (responseData is Map ? responseData['message'] : null)?.toString()
+            ?? e.error?.toString()
+            ?? 'Unknown error occurred';
 
         switch (statusCode) {
           case 400:
@@ -252,16 +255,16 @@ class ApiClient {
         }
 
       case DioExceptionType.cancel:
-        return NetworkException('Request was cancelled');
+        return const NetworkException('Request was cancelled');
 
       case DioExceptionType.unknown:
         if (e.error is SocketException) {
-          return NetworkException('No internet connection');
+          return const NetworkException('No internet connection');
         }
-        return NetworkException('Network error occurred');
+        return const NetworkException('Network error occurred');
 
       default:
-        return NetworkException('Unknown error occurred');
+        return const NetworkException('Unknown error occurred');
     }
   }
 }

@@ -193,7 +193,8 @@ class AssessmentLineChart extends StatelessWidget {
           ? List<double>.from((dataset['data'] as List).map((e) => e.toDouble()))
           : <double>[];
 
-      final color = dataset?['color'] ?? '#0000FF';
+      // 7.9a: Use app theme blue as fallback colour
+      final color = dataset?['color'] ?? '#0147D9';
 
       return [
         LineChartBarData(
@@ -221,7 +222,7 @@ class AssessmentLineChart extends StatelessWidget {
       return datasets.map((dataset) {
         final data = List<double>.from(
             (dataset['data'] as List).map((e) => e.toDouble()));
-        final color = dataset['color'] ?? '0000FF';
+        final color = dataset['color'] ?? '0147D9';
 
         return LineChartBarData(
           spots: data.asMap().entries.map((entry) {
@@ -274,8 +275,8 @@ class AssessmentLineChart extends StatelessWidget {
     try {
       return Color(int.parse(hexColor, radix: 16));
     } catch (e) {
-      // Fallback to blue if parsing fails
-      return const Color(0xFF0000FF);
+      // 7.9a: Fallback to app theme blue
+      return const Color(0xFF0147D9);
     }
   }
 }

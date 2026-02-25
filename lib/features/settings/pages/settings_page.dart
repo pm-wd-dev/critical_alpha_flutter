@@ -16,7 +16,7 @@ class SettingsPage extends ConsumerWidget {
         children: [
           // Header
           Container(
-            color: Colors.white,
+            color: const Color(0xFFF5F5F5),
             child: SafeArea(
               bottom: false,
               child: Container(

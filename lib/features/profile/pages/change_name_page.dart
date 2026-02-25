@@ -21,7 +21,6 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
   @override
   void initState() {
     super.initState();
-    // Pre-fill with current username
     final user = ref.read(authControllerProvider).user;
     if (user != null && user.username != null) {
       _nameController.text = user.username!;
@@ -34,28 +33,79 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
     super.dispose();
   }
 
+  void _showTopBar(
+    String message, {
+    String? title,
+    Color backgroundColor = Colors.red,
+  }) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        top: MediaQuery.of(ctx).viewPadding.top + 12,
+        left: 16,
+        right: 16,
+        child: Material(
+          elevation: 6,
+          borderRadius: BorderRadius.circular(8),
+          color: backgroundColor,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (title != null)
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(entry);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (entry.mounted) entry.remove();
+    });
+  }
+
   Future<void> _changeName() async {
     final name = _nameController.text.trim();
 
-    // Validation
     if (name.isEmpty) {
-      setState(() {
-        _errorMessage = 'Please enter a name';
-      });
+      setState(() => _errorMessage = 'Please enter a name');
       return;
     }
 
     if (name.length < 3) {
-      setState(() {
-        _errorMessage = 'Name must be at least 3 characters';
-      });
+      setState(() => _errorMessage = 'Name must be at least 3 characters');
       return;
     }
 
     if (name.length > 20) {
-      setState(() {
-        _errorMessage = 'Name must not exceed 20 characters';
-      });
+      setState(() => _errorMessage = 'Name must not exceed 20 characters');
+      return;
+    }
+
+    final currentUsername = ref.read(authControllerProvider).user?.username;
+    if (name == currentUsername) {
+      setState(() => _errorMessage = 'This is already your current username');
       return;
     }
 
@@ -67,33 +117,35 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
     try {
       final result = await _profileService.changeUsername(name);
 
-      if (result['success']) {
-        // Update local user data - reload user info
+      if (result['success'] == true) {
         await ref.read(authControllerProvider.notifier).getCurrentUser();
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(result['message'] ?? 'Username updated successfully'),
-              backgroundColor: Colors.green,
-            ),
+          _showTopBar(
+            'Change Name Process Succeeded',
+            title: 'Username Updated Successfully!',
+            backgroundColor: Colors.green,
           );
           context.go('/home');
         }
       } else {
-        setState(() {
-          _errorMessage = result['message'] ?? 'Failed to update username';
-        });
+        if (mounted) {
+          final raw = (result['message'] as String? ?? '').toLowerCase();
+          final message = raw.contains('already exist') || raw.contains('already exists')
+              ? 'Username already exists. Please try a different name.'
+              : result['message']?.isNotEmpty == true
+                  ? result['message']
+                  : 'Failed to update username. Please try again.';
+          _showTopBar(message);
+        }
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'An error occurred. Please try again.';
-      });
+      if (mounted) {
+        _showTopBar('Something went wrong. Please try again.');
+      }
     } finally {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
       }
     }
   }
@@ -107,15 +159,14 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
           child: ConstrainedBox(
             constraints: BoxConstraints(
               minHeight: MediaQuery.of(context).size.height -
-                        MediaQuery.of(context).padding.top -
-                        MediaQuery.of(context).padding.bottom,
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const SizedBox(height: 40),
 
-                // Logo
                 Center(
                   child: Image.asset(
                     AppAssets.logo,
@@ -127,7 +178,6 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
 
                 const SizedBox(height: 60),
 
-                // Form Section
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -141,7 +191,6 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Name Label
                       const Text(
                         'Name',
                         style: TextStyle(
@@ -153,7 +202,6 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
                       ),
                       const SizedBox(height: 8),
 
-                      // Name Input
                       TextField(
                         controller: _nameController,
                         style: const TextStyle(
@@ -163,9 +211,7 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
                         ),
                         onChanged: (value) {
                           if (_errorMessage != null) {
-                            setState(() {
-                              _errorMessage = null;
-                            });
+                            setState(() => _errorMessage = null);
                           }
                         },
                         decoration: InputDecoration(
@@ -204,7 +250,6 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
                         ),
                       ),
 
-                      // Error Message
                       if (_errorMessage != null)
                         Padding(
                           padding: const EdgeInsets.only(top: 8),
@@ -220,7 +265,6 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
 
                       const SizedBox(height: 40),
 
-                      // Save Button
                       Center(
                         child: _isLoading
                             ? const CircularProgressIndicator()
@@ -251,7 +295,6 @@ class _ChangeNamePageState extends ConsumerState<ChangeNamePage> {
 
                       const SizedBox(height: 16),
 
-                      // Cancel Button
                       Center(
                         child: TextButton(
                           onPressed: () => Navigator.pop(context),

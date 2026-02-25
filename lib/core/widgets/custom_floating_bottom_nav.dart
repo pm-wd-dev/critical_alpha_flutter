@@ -23,6 +23,10 @@ class CustomFloatingBottomNav extends ConsumerWidget {
     } else if (currentLocation.startsWith('/settings')) {
       // Redirect settings to home
       currentIndex = 0;
+    } else if (currentLocation.startsWith('/plan/') ||
+        currentLocation.startsWith('/assessment/')) {
+      // Plan detail and assessment routes belong to Plans tab
+      currentIndex = 1;
     }
 
     return Container(

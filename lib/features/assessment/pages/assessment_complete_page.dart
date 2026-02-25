@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_assets.dart';
+import '../../../core/widgets/custom_drawer.dart';
+import '../../../core/widgets/custom_floating_bottom_nav.dart';
 import '../../plans/services/plan_service.dart';
 
 class AssessmentCompletePage extends ConsumerStatefulWidget {
@@ -16,10 +18,12 @@ class AssessmentCompletePage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AssessmentCompletePage> createState() => _AssessmentCompletePageState();
+  ConsumerState<AssessmentCompletePage> createState() =>
+      _AssessmentCompletePageState();
 }
 
-class _AssessmentCompletePageState extends ConsumerState<AssessmentCompletePage> {
+class _AssessmentCompletePageState
+    extends ConsumerState<AssessmentCompletePage> {
   final PlanService _planService = PlanService();
   bool _isSubmitting = false;
 
@@ -41,7 +45,6 @@ class _AssessmentCompletePageState extends ConsumerState<AssessmentCompletePage>
             backgroundColor: Colors.green,
           ),
         );
-        // Navigate back to plan detail (it will reload data automatically)
         context.go('/plan/${widget.planId}');
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -71,6 +74,9 @@ class _AssessmentCompletePageState extends ConsumerState<AssessmentCompletePage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      // 7.4: Drawer and bottom nav
+      drawer: const CustomDrawer(),
+      bottomNavigationBar: const CustomFloatingBottomNav(),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -87,115 +93,115 @@ class _AssessmentCompletePageState extends ConsumerState<AssessmentCompletePage>
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.menu, color: Colors.black),
-            onPressed: () => Scaffold.of(context).openEndDrawer(),
+          // 7.1: App logo at top-right
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () => Scaffold.of(context).openDrawer(),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0147D9),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Image.asset(
+                      AppAssets.drawerIcon,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Congratulations Text
-              const Text(
-                'Congrats. Your plan assessment is',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
+      // 7.7: Body text at top, heading centered
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // 7.7: Center-aligned heading at top
+            const Text(
+              'Congrats. Your plan assessment is completed.',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w400,
+                color: Colors.black87,
               ),
-              const Text(
-                'completed.',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              textAlign: TextAlign.center,
+            ),
 
-              const SizedBox(height: 48),
+            const SizedBox(height: 40),
 
-              // Success Image
-              Container(
-                width: 280,
-                height: 250,
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: Image.asset(
-                    AppAssets.assessmentComplete,
-                    width: 240,
-                    height: 200,
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Fallback to icon if image not found
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 100,
-                            color: Colors.green.shade400,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Assessment Complete',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.green.shade700,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 60),
-
-              // See Results Button
-              SizedBox(
-                width: 180,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitAssessment,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+            // 7.7: No background color, larger image
+            Image.asset(
+              AppAssets.assessmentComplete,
+              width: double.infinity,
+              height: 300,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.check_circle,
+                      size: 120,
+                      color: Colors.green.shade400,
                     ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Assessment Complete',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 48),
+
+            // See Results Button
+            SizedBox(
+              width: 180,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submitAssessment,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          'See Results',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
                 ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'See Results',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

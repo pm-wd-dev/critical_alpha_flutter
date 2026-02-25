@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/errors/failures.dart';
 
 class ProfileService {
   final ApiClient _apiClient = ApiClient();
@@ -15,25 +16,22 @@ class ProfileService {
       );
 
       return {
-        'success': response.statusCode == 200,
+        'success': response.data['success'] ?? response.statusCode == 200,
         'message': response.data['message'] ?? 'Username updated successfully',
         'data': response.data,
       };
+    } on AppException catch (e) {
+      return {'success': false, 'message': e.message};
     } on DioException catch (e) {
-      if (e.response?.data != null && e.response?.data['message'] != null) {
-        return {
-          'success': false,
-          'message': e.response!.data['message'],
-        };
-      }
-      return {
-        'success': false,
-        'message': 'Failed to update username',
-      };
+      final message = (e.response?.data is Map
+              ? (e.response!.data as Map)['message']?.toString()
+              : null) ??
+          'Failed to update username. Please try again.';
+      return {'success': false, 'message': message};
     } catch (e) {
       return {
         'success': false,
-        'message': 'An error occurred',
+        'message': 'Failed to update username. Please try again.',
       };
     }
   }

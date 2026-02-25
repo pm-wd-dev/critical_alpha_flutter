@@ -59,7 +59,7 @@ class PlanService {
         'improve': improve,
       };
 
-      final response = await _apiClient.put('/user/plans/update', data: data);
+      final response = await _apiClient.post('/user/plans/update', data: data);
       final responseData = response?.data;
       return response?.statusCode == 200 || (responseData != null && responseData['status'] == 200);
     } catch (e) {
