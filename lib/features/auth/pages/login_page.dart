@@ -6,6 +6,7 @@ import 'package:reactive_forms/reactive_forms.dart';
 
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/app_assets.dart';
+import '../../../core/errors/failures.dart';
 import '../../../routes/route_constants.dart';
 import '../controllers/auth_controller.dart';
 import '../models/auth_request_models.dart';
@@ -59,16 +60,48 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     ref.listen(authControllerProvider, (previous, next) {
       if (next.error != null) {
-        // Clear any loading state
-        ref.read(authControllerProvider.notifier).clearError();
+        // Check if the error is due to unverified email
+        final error = next.error!;
 
-        // Show error message
-        _showErrorSnackBar(
-          title: 'Login Failed',
-          message: next.error!.message,
-        );
 
-        // Do NOT navigate anywhere on error - stay on login page
+        // Check if this is a ValidationException with email_verification flag
+        if (error is ValidationException &&
+            error.errors != null &&
+            error.errors!['email_verification'] == true) {
+
+          // Show the actual error message from the API
+          _showErrorSnackBar(
+            title: 'Account Not Verified',
+            message: error.message,
+          );
+
+          // Store email before navigation
+          final email = form.control('email').value as String;
+          final otpRoute = '${RouteConstants.codeVerification}?email=${Uri.encodeComponent(email.trim().toLowerCase())}&type=email_verification';
+
+          // Navigate to OTP verification screen after showing the message
+          Future.delayed(const Duration(seconds: 2), () {
+            if (mounted) {
+              context.push(otpRoute);
+              // Clear error after navigation to prevent re-triggering
+              ref.read(authControllerProvider.notifier).clearError();
+            }
+          });
+        } else {
+          // Show regular error message
+          _showErrorSnackBar(
+            title: 'Login Failed',
+            message: error.message,
+          );
+          // Clear error after showing message to prevent re-triggering
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              ref.read(authControllerProvider.notifier).clearError();
+            }
+          });
+        }
+
+        // Do NOT navigate anywhere on error - stay on login page (unless it's unverified email)
         return;
       }
 
@@ -411,6 +444,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _handleLogin() async {
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
     if (!form.valid) {
       form.markAllAsTouched();
       return;

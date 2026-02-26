@@ -96,8 +96,8 @@ class _CodeVerificationPageState extends ConsumerState<CodeVerificationPage> {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+        backgroundColor: Colors.white,
+        body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),

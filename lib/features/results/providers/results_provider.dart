@@ -11,6 +11,13 @@ final assessmentsProvider = FutureProvider.family<List<Assessment>, String?>((re
   return await apiService.getUserAssessments(planId);
 });
 
+// Provider to fetch ALL assessments regardless of plan
+final allAssessmentsProvider = FutureProvider<List<Assessment>>((ref) async {
+  final apiService = ref.read(resultsApiServiceProvider);
+  // Pass null to get all assessments without filtering by plan
+  return await apiService.getUserAssessments(null);
+});
+
 final selectedAssessmentProvider = StateProvider<Assessment?>((ref) => null);
 
 final chartDataProvider = FutureProvider<Map<String, dynamic>?>((ref) async {

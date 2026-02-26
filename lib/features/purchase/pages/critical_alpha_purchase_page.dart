@@ -48,11 +48,11 @@ class _CriticalAlphaPurchasePageState extends ConsumerState<CriticalAlphaPurchas
               backgroundColor: Colors.green,
             ),
           );
-          // Navigate back to home
+          // Navigate directly to home page, not splash
           if (current.message?.contains('restore') == true) {
-            context.go('/');
+            context.go('/home');
           } else {
-            context.go('/');
+            context.go('/home');
           }
         } else if (current.message != null) {
           // Show message for failed restore or no purchases

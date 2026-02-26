@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_assets.dart';
 import '../../../core/widgets/bottom_navigation.dart';
-import '../../auth/controllers/auth_controller.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -96,27 +95,11 @@ class SettingsPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Change Email
-                  _buildSettingItem(
-                    context: context,
-                    title: 'Change Email',
-                    onTap: () => context.push('/profile/change-email'),
-                  ),
-                  const SizedBox(height: 20),
-
                   // Change Password
                   _buildSettingItem(
                     context: context,
                     title: 'Change Password',
                     onTap: () => context.push('/profile/change-password'),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Logout
-                  _buildSettingItem(
-                    context: context,
-                    title: 'Logout',
-                    onTap: () => _showLogoutDialog(context, ref),
                   ),
                 ],
               ),
@@ -163,65 +146,6 @@ class SettingsPage extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showLogoutDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: const Text(
-          'Logout',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Poppins',
-          ),
-        ),
-        content: const Text(
-          'Are you sure you want to logout?',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 14,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: Colors.grey,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              // Close the dialog first
-              Navigator.pop(dialogContext);
-
-              // Perform logout
-              await ref.read(authControllerProvider.notifier).logout();
-
-              // The router will automatically redirect to login
-              // due to the redirect logic in app_router.dart
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF0147D9),
-            ),
-            child: const Text(
-              'Logout',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

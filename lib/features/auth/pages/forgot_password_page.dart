@@ -48,10 +48,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
       if (next.message != null && next.message!.isNotEmpty) {
         _showSuccess(next.message!);
-        // Navigate to verification page using go instead of push to replace the current screen
-        // This prevents issues with authentication redirects
+        // Navigate to verification page using push to maintain navigation stack
         final email = form.control('email').value as String;
-        context.go('${RouteConstants.codeVerification}?email=${Uri.encodeComponent(email)}&type=password_reset');
+        context.push('${RouteConstants.codeVerification}?email=${Uri.encodeComponent(email)}&type=password_reset');
       }
     });
 
@@ -239,6 +238,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   }
 
   Future<void> _handleSendReset() async {
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
     if (!form.valid) {
       form.markAllAsTouched();
       return;

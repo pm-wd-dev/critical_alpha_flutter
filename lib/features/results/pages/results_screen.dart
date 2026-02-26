@@ -21,20 +21,59 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
   @override
   void initState() {
     super.initState();
-    // Set the plan ID if provided
-    if (widget.planId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(currentPlanIdProvider.notifier).state = widget.planId;
-        // Force refresh assessments when coming from assessment completion
-        ref.invalidate(assessmentsProvider);
-      });
+    _refreshAssessments();
+  }
+
+  @override
+  void didUpdateWidget(ResultsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Check if planId changed
+    if (widget.planId != oldWidget.planId) {
+      _refreshAssessments();
     }
+  }
+
+  void _refreshAssessments() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Set the plan ID if provided
+      if (widget.planId != null) {
+        ref.read(currentPlanIdProvider.notifier).state = widget.planId;
+      }
+
+      // Force refresh all assessments (for dropdown)
+      ref.invalidate(allAssessmentsProvider);
+
+      // Also refresh plan-specific assessments if needed
+      final planId = widget.planId ?? ref.read(currentPlanIdProvider);
+      if (planId != null) {
+        ref.invalidate(assessmentsProvider(planId));
+      }
+
+      // Clear the selected assessment first
+      ref.read(selectedAssessmentProvider.notifier).state = null;
+
+      // Wait for assessments to load and select the latest one if coming from assessment
+      if (widget.planId != null) {
+        Future.delayed(const Duration(milliseconds: 500), () {
+          // Use all assessments but filter for the specific plan to find the latest
+          final allAssessmentsAsync = ref.read(allAssessmentsProvider);
+          allAssessmentsAsync.whenData((assessments) {
+            // Find the latest assessment for this specific plan
+            final planAssessments = assessments.where((a) => a.planId == widget.planId).toList();
+            if (planAssessments.isNotEmpty) {
+              // Select the most recent assessment for this plan
+              ref.read(selectedAssessmentProvider.notifier).state = planAssessments.first;
+            }
+          });
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final planId = widget.planId ?? ref.watch(currentPlanIdProvider);
-    final assessmentsAsync = ref.watch(assessmentsProvider(planId));
+    // Use all assessments for the dropdown to show assessments from all plans
+    final assessmentsAsync = ref.watch(allAssessmentsProvider);
     final selectedAssessment = ref.watch(selectedAssessmentProvider);
     final showAll = ref.watch(showAllChartsProvider);
 

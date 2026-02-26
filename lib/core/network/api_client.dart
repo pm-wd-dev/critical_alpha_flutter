@@ -406,6 +406,16 @@ class _ErrorInterceptor extends Interceptor {
     // Handle success responses with error status
     if (response.data is Map<String, dynamic>) {
       final data = response.data as Map<String, dynamic>;
+
+      // Special handling for login endpoint with unverified account
+      // Allow these responses to pass through for proper handling in auth repository
+      if (response.requestOptions.path.contains('/login') ||
+          response.requestOptions.path.contains('/signup')) {
+        // Let auth endpoints handle their own error responses
+        handler.next(response);
+        return;
+      }
+
       if (data['success'] == false || data['error'] != null) {
         handler.reject(
           DioException(

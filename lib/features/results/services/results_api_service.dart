@@ -7,31 +7,37 @@ class ResultsApiService {
 
   Future<List<Assessment>> getUserAssessments(String? planId) async {
     try {
-      final queryParams = planId != null ? {'plan_id': planId} : null;
-
+      // Don't pass plan_id in query params to get all assessments
+      // We'll filter locally if needed
       final response = await _apiClient.get(
         ApiEndpoints.assessments,
-        queryParameters: queryParams,
+        queryParameters: null, // Always fetch all assessments
       );
 
       final data = response.data;
       if (data['data'] != null && data['data'] is List) {
         final assessmentsList = data['data'] as List;
-        // Filter only assessments that belong to the requested planId
+
+        // Filter only assessments that belong to the requested planId if specified
         final filteredList = planId != null
             ? assessmentsList.where((item) => item['plan_id'] == planId).toList()
             : assessmentsList;
 
+        // For naming, use the full list index when showing all assessments
         return filteredList
-            .map((item) => Assessment(
-                  id: item['_id'] ?? '',
-                  name: 'Assessment ${filteredList.indexOf(item) + 1}',
-                  createdAt: item['createdAt'] != null
-                      ? DateTime.parse(item['createdAt'])
-                      : DateTime.now(),
-                  planId: item['plan_id'],
-                  data: item,
-                ))
+            .map((item) {
+              // Find the index in the full list for consistent naming
+              final indexInFullList = assessmentsList.indexOf(item);
+              return Assessment(
+                id: item['_id'] ?? '',
+                name: 'Assessment ${indexInFullList + 1}',
+                createdAt: item['createdAt'] != null
+                    ? DateTime.parse(item['createdAt'])
+                    : DateTime.now(),
+                planId: item['plan_id'],
+                data: item,
+              );
+            })
             .toList();
       }
       return [];

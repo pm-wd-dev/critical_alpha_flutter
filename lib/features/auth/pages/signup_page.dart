@@ -534,6 +534,9 @@ class _SignupPageState extends ConsumerState<SignupPage> {
   }
 
   Future<void> _handleSignup() async {
+    // Dismiss keyboard
+    FocusScope.of(context).unfocus();
+
     if (!form.valid) {
       form.markAllAsTouched();
       return;
@@ -578,9 +581,8 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         final encodedEmail = Uri.encodeQueryComponent(email.trim().toLowerCase());
         await Future.delayed(const Duration(seconds: 2));
         if (mounted) {
-          // Use go instead of pushReplacement to ensure immediate navigation
-          // and prevent any router redirect interference
-          context.go('${RouteConstants.codeVerification}?email=$encodedEmail&type=email_verification');
+          // Use push to maintain navigation stack for back button
+          context.push('${RouteConstants.codeVerification}?email=$encodedEmail&type=email_verification');
         }
       }
     }

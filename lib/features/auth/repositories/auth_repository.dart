@@ -68,11 +68,22 @@ class AuthRepositoryImpl implements AuthRepository {
         // Clear any stored credentials on server errors
         await clearStoredData();
 
-        if (status == 401 || message.toLowerCase().contains('invalid')) {
+        // Check for unverified account FIRST before other error checks
+        final lowerMessage = message.toLowerCase();
+        if (lowerMessage.contains('not verified') ||
+            lowerMessage.contains('account is not verified') ||
+            lowerMessage.contains('kindly check your mail') ||
+            lowerMessage.contains('one time password')) {
+          return Result.failure(
+            ValidationException(message, const {'email_verification': true}),
+          );
+        }
+
+        if (status == 401 || lowerMessage.contains('invalid')) {
           return Result.failure(
             const UnauthorizedException('Invalid email or password'),
           );
-        } else if (status == 500 || message.toLowerCase().contains('token')) {
+        } else if (status == 500 || lowerMessage.contains('token')) {
           return Result.failure(
             NetworkException('Server error: $message'),
           );
@@ -80,6 +91,21 @@ class AuthRepositoryImpl implements AuthRepository {
 
         return Result.failure(
           NetworkException(message),
+        );
+      }
+
+      // First check for unverified account regardless of success flag
+      // This handles the case where API returns success: false with status: 200 for unverified accounts
+      final message = responseData['message'] as String? ?? '';
+      final lowerMessage = message.toLowerCase();
+
+
+      if (lowerMessage.contains('not verified') ||
+          lowerMessage.contains('account is not verified') ||
+          lowerMessage.contains('kindly check your mail') ||
+          lowerMessage.contains('one time password')) {
+        return Result.failure(
+          ValidationException(message, const {'email_verification': true}),
         );
       }
 
@@ -126,14 +152,8 @@ class AuthRepositoryImpl implements AuthRepository {
           const ForbiddenException('Your account has been blocked by admin'),
         );
       } else {
-        final message = responseData['message'] ?? 'Login failed';
-        if (message.contains('not verified')) {
-          return Result.failure(
-            ValidationException(message, {'email_verification': true}),
-          );
-        }
         return Result.failure(
-          NetworkException(message),
+          NetworkException(message.isNotEmpty ? message : 'Login failed'),
         );
       }
     } on AppException catch (e) {
