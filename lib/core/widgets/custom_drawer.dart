@@ -1,8 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../features/auth/controllers/auth_controller.dart';
 import '../../routes/route_constants.dart';
@@ -253,16 +253,18 @@ class CustomDrawer extends ConsumerWidget {
                 const SizedBox(height: 20),
 
                 // Delete Account (Red)
-                _buildDrawerItem(
-                  icon: Icons.delete_outline,
-                  title: 'Delete account',
-                  textColor: Colors.red,
-                  iconColor: Colors.red,
-                  onTap: () {
-                    Navigator.pop(context);
-                    _showDeleteAccountDialog(context, ref);
-                  },
-                ),
+               _buildDrawerItem(
+  icon: Icons.delete_outline,
+  title: 'Delete account',
+  textColor: Colors.red,
+  iconColor: Colors.red,
+  onTap: () {
+    Navigator.pop(context);
+    _showDeleteAccountDialog(context, ref);
+  },
+),
+              
+              
               ],
             ),
           ),
@@ -406,9 +408,14 @@ class CustomDrawer extends ConsumerWidget {
   }
 
   void _showDeleteAccountDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) => AlertDialog(
+  // Capture the auth controller and router BEFORE showing the dialog
+  final authController = ref.read(authControllerProvider.notifier);
+  final router = GoRouter.of(context);
+
+  showDialog(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -422,8 +429,7 @@ class CustomDrawer extends ConsumerWidget {
         ),
         content: const Text(
           'Are you sure you want to delete your account? '
-          'This action cannot be undone and you will be permanently '
-          'removed from Critical Alpha.',
+          'This action cannot be undone.',
           style: TextStyle(
             fontFamily: 'Poppins',
             fontSize: 14,
@@ -442,15 +448,11 @@ class CustomDrawer extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () async {
-              // Close confirmation dialog
+              // Close the dialog first
               Navigator.pop(dialogContext);
-              // Wait for the dialog to close completely
-              await Future.delayed(const Duration(milliseconds: 100));
-              // Check if context is still mounted
-              if (context.mounted) {
-                // Execute deletion
-                _executeAccountDeletion(context, ref);
-              }
+
+              // Execute deletion with captured router
+              await _executeAccountDeletion(router, authController);
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
@@ -464,119 +466,66 @@ class CustomDrawer extends ConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
-  Future<void> _executeAccountDeletion(BuildContext context, WidgetRef ref) async {
-    debugPrint('🔑 Starting account deletion...');
 
-    // Show loading overlay
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext loadingContext) => PopScope(
-        canPop: false,
-        child: Container(
-          color: Colors.black54,
-          child: const Center(
-            child: Card(
-              child: Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Deleting account...'),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
+
+Future<void> _executeAccountDeletion(
+    GoRouter router, dynamic authController) async {
+
+  debugPrint('🔑 Starting account deletion...');
+
+  try {
+
+    final apiClient = ApiClient();
+    await apiClient.initializeTokens();
+
+    final response = await apiClient.delete(
+      ApiEndpoints.deleteAccount,
+      options: Options(
+        headers: {
+          'Authorization': apiClient.authToken,
+        },
       ),
     );
 
+    if (response.statusCode != 200 &&
+        response.statusCode != 204) {
+      throw Exception("Delete failed");
+    }
+
+    // Clear all local data after successful deletion
+    debugPrint('🗑️ Clearing local data...');
+    await apiClient.clearTokens();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    debugPrint('✅ Local data cleared');
+
+    // Navigate to login screen using the router directly
+    debugPrint('🔄 Navigating to login screen...');
+    debugPrint('📍 Route constant value: ${RouteConstants.login}');
+
+    // Use the router directly - no context needed
+    router.go(RouteConstants.login);
+
+    debugPrint('✅ Navigation command sent');
+
+  } catch (e) {
+    debugPrint("❌ Delete error: $e");
+
+    // Clear tokens and navigate to login even on error
     try {
-      // Make API call
       final apiClient = ApiClient();
-      // Ensure tokens are loaded
-      await apiClient.initializeTokens();
-
-      debugPrint('🗑️ Calling delete API...');
-      debugPrint('🔑 Auth token: ${apiClient.authToken}');
-      debugPrint('📍 Delete endpoint: ${ApiEndpoints.deleteAccount}');
-
-      final response = await apiClient.delete(ApiEndpoints.deleteAccount);
-      debugPrint('✅ API Response: ${response.data}');
-
-      // Clear local data
       await apiClient.clearTokens();
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
-      debugPrint('✅ Local data cleared');
+    } catch (_) {}
 
-      // Clear auth state
-      try {
-        ref.read(authControllerProvider.notifier).clearAuthState();
-        debugPrint('✅ Auth state cleared');
-      } catch (e) {
-        debugPrint('⚠️ Error clearing auth state: $e');
-      }
-
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-
-      // Show success and navigate
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account deleted successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Navigate to login
-        context.go(RouteConstants.login);
-        debugPrint('✅ Navigated to login');
-      }
-
-    } catch (error, stackTrace) {
-      debugPrint('❌ Delete failed: $error');
-      debugPrint('📚 Stack trace: $stackTrace');
-
-      // Clear data anyway
-      try {
-        final apiClient = ApiClient();
-        await apiClient.clearTokens();
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.clear();
-        ref.read(authControllerProvider.notifier).clearAuthState();
-      } catch (e) {
-        debugPrint('⚠️ Error during cleanup: $e');
-      }
-
-      // Close loading dialog
-      if (context.mounted) {
-        Navigator.of(context, rootNavigator: true).pop();
-      }
-
-      // Show error and navigate
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account may have been deleted. Logging out...'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-
-        // Navigate to login anyway
-        context.go(RouteConstants.login);
-        debugPrint('✅ Navigated to login after error');
-      }
-    }
+    // Navigate to login using router
+    router.go(RouteConstants.login);
   }
+}
 }

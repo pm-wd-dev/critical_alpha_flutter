@@ -202,6 +202,39 @@ class _PlansPageState extends ConsumerState<PlansPage> {
                                 padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
                                 child: Column(
                                   children: [
+                                    // Hint for delete functionality
+                                    if (plansState.plans.isNotEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 8,
+                                        ),
+                                        margin: const EdgeInsets.only(bottom: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.shade50,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Row(
+                                          children: [
+                                            Icon(
+                                              Icons.info_outline,
+                                              size: 16,
+                                              color: Colors.blue,
+                                            ),
+                                            SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Swipe left or long press on a plan to delete it',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.blue,
+                                                  fontFamily: 'Poppins',
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     ...plansState.plans.map((plan) => _buildPlanCard(plan)),
                                     const SizedBox(height: 24),
                                     GestureDetector(
@@ -316,74 +349,222 @@ class _PlansPageState extends ConsumerState<PlansPage> {
     final isComplete = plan.status == 'true';
     const tileColor = Color(0xFFDDE6F5);
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Left: title tile (tappable → detail)
-          Expanded(
-            child: GestureDetector(
-              onTap: () => context.push('/plan/${plan.id}'),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: tileColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  plan.title,
+    return Dismissible(
+      key: Key(plan.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        // Show confirmation dialog
+        return await showDialog(
+          context: context,
+          builder: (BuildContext context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Text(
+              'Delete Plan',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Poppins',
+              ),
+            ),
+            content: Text(
+              'Are you sure you want to delete "${plan.title}"? This action cannot be undone.',
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text(
+                  'Cancel',
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    color: Colors.grey,
                     fontFamily: 'Poppins',
-                    color: isComplete ? Colors.grey : Colors.black87,
-                    decoration: isComplete
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+      onDismissed: (direction) async {
+        // Delete the plan
+        try {
+          print('🔥 Deleting plan via swipe: ${plan.id}');
+          await ref.read(plansControllerProvider.notifier).deletePlan(plan.id);
+          _showStatusBanner(
+            'Plan deleted successfully',
+            color: const Color(0xFF4CAF50),
+          );
+        } catch (e) {
+          print('❌ Failed to delete plan via swipe: $e');
+          _showStatusBanner(
+            'Failed to delete plan: ${e.toString()}',
+            color: Colors.red,
+          );
+          // Rebuild the list to restore the item since deletion failed
+          ref.read(plansControllerProvider.notifier).refreshPlans();
+        }
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: Colors.red,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.delete,
+          color: Colors.white,
+          size: 28,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Left: title tile (tappable → detail, long press → delete)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => context.push('/plan/${plan.id}'),
+                onLongPress: () {
+                  // Show delete confirmation dialog on long press
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      title: const Text(
+                        'Delete Plan',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Poppins',
+                        ),
+                      ),
+                      content: Text(
+                        'Are you sure you want to delete "${plan.title}"? This action cannot be undone.',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 14,
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                            try {
+                              print('🔥 Deleting plan from UI: ${plan.id}');
+                              await ref.read(plansControllerProvider.notifier).deletePlan(plan.id);
+                              _showStatusBanner(
+                                'Plan deleted successfully',
+                                color: const Color(0xFF4CAF50),
+                              );
+                            } catch (e) {
+                              print('❌ Failed to delete plan from UI: $e');
+                              _showStatusBanner(
+                                'Failed to delete plan: ${e.toString()}',
+                                color: Colors.red,
+                              );
+                            }
+                          },
+                          style: TextButton.styleFrom(foregroundColor: Colors.red),
+                          child: const Text(
+                            'Delete',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: tileColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    plan.title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      fontFamily: 'Poppins',
+                      color: isComplete ? Colors.grey : Colors.black87,
+                      decoration: isComplete
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
 
-          const SizedBox(width: 8),
+            const SizedBox(width: 8),
 
-          // Right: checkbox tile
-          GestureDetector(
-            onTap: () async {
-              final wasComplete = isComplete;
-              await ref
-                  .read(plansControllerProvider.notifier)
-                  .updatePlanStatus(plan.id, !isComplete);
-              if (!wasComplete) {
-                _showStatusBanner(
-                  'Plan Completed Successfully',
-                  color: const Color(0xFF4CAF50),
-                );
-              } else {
-                _showStatusBanner(
-                  'Plan set to uncomplete successfully',
-                  color: Colors.red,
-                );
-              }
-            },
-            child: Container(
-              width: 64,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(
-                color: isComplete ? const Color(0xFF0147D9) : tileColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.check,
-                size: 24,
-                color: Colors.white
+            // Right: checkbox tile
+            GestureDetector(
+              onTap: () async {
+                final wasComplete = isComplete;
+                await ref
+                    .read(plansControllerProvider.notifier)
+                    .updatePlanStatus(plan.id, !isComplete);
+                if (!wasComplete) {
+                  _showStatusBanner(
+                    'Plan Completed Successfully',
+                    color: const Color(0xFF4CAF50),
+                  );
+                } else {
+                  _showStatusBanner(
+                    'Plan set to uncomplete successfully',
+                    color: Colors.red,
+                  );
+                }
+              },
+              child: Container(
+                width: 64,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                decoration: BoxDecoration(
+                  color: isComplete ? const Color(0xFF0147D9) : tileColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.check,
+                  size: 24,
+                  color: Colors.white
+                ),
               ),
             ),
+          ],
           ),
-        ],
         ),
       ),
     );

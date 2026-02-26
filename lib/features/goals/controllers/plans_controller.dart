@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:dio/dio.dart';
 import '../../../core/network/api_client.dart';
 import '../models/plan_model.dart';
 
@@ -114,17 +115,35 @@ class PlansController extends StateNotifier<PlansState> {
   }
 
   Future<void> deletePlan(String planId) async {
+    print('🗑️ Attempting to delete plan with ID: $planId');
+
     try {
-      // Use correct payload structure
-      await _apiClient.delete('/user/plans/delete', data: {'plan_id': planId});
+      // Use correct payload structure matching React Native
+      final payload = {'plan_id': planId};
+      print('📤 Delete payload: $payload');
+
+      final response = await _apiClient.delete(
+        '/user/plans/delete',
+        data: payload,
+      );
+
+      print('✅ Delete response: ${response.data}');
 
       // Remove the plan from the list
       state = state.copyWith(
         plans: state.plans.where((p) => p.id != planId).toList(),
       );
+
+      print('✅ Plan deleted successfully from local state');
     } catch (e) {
       print('❌ Error deleting plan: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      if (e is DioException) {
+        print('❌ DioError response: ${e.response?.data}');
+        print('❌ DioError status code: ${e.response?.statusCode}');
+      }
       state = state.copyWith(error: e.toString());
+      rethrow;
     }
   }
 
