@@ -46,13 +46,18 @@ class DashboardController extends StateNotifier<DashboardState> {
   Future<void> loadDashboard() async {
     state = state.copyWith(isLoading: true, error: null);
 
-    // Check current purchase state
+    // IMPORTANT: This matches React Native flow from Home.js
+    // 1. First check device IAP purchases (will be updated by PurchaseController auto-restore)
+    // 2. Then call personal_dashboard API which may have user-specific subscription status
+    // 3. API subscription status takes priority over device IAP to handle multi-user scenario
+
+    // Check current purchase state from IAP
     try {
       final purchaseState = _ref.read(purchaseControllerProvider);
       state = state.copyWith(isPurchased: purchaseState.hasActiveSubscription);
-      print('📱 Dashboard loaded with purchase state: ${purchaseState.hasActiveSubscription}');
+      print('📱 Dashboard loaded with IAP purchase state: ${purchaseState.hasActiveSubscription}');
     } catch (e) {
-      print('⚠️ Could not check purchase state: $e');
+      print('⚠️ Could not check IAP purchase state: $e');
     }
 
     try {
@@ -75,9 +80,43 @@ class DashboardController extends StateNotifier<DashboardState> {
         '/user/home/v2/personal_dashboard',
       );
 
+      print('========== FULL API RESPONSE: /user/home/v2/personal_dashboard ==========');
       print('✅ Dashboard API Response received');
       print('Response data type: ${response.data.runtimeType}');
-      print('Response data: ${response.data}');
+      print('Full response data: ${response.data}');
+
+      // Log detailed structure
+      if (response.data is Map) {
+        final data = response.data as Map;
+        print('Response keys: ${data.keys.toList()}');
+
+        // Check for User object
+        if (data['User'] != null || data['user'] != null) {
+          final userData = data['User'] ?? data['user'];
+          print('User object found: $userData');
+          print('User keys: ${userData is Map ? userData.keys.toList() : "Not a Map"}');
+
+          // Check for subscription flags
+          if (userData is Map) {
+            print('isSubscribed in User: ${userData['isSubscribed']}');
+            print('isPremium in User: ${userData['isPremium']}');
+            print('isPurchased in User: ${userData['isPurchased']}');
+            print('subscriptionStatus in User: ${userData['subscriptionStatus']}');
+          }
+        }
+
+        // Check for Assessment
+        if (data['Assessment'] != null || data['assessment'] != null) {
+          final assessmentData = data['Assessment'] ?? data['assessment'];
+          print('Assessment data: $assessmentData');
+        }
+
+        // Check for meterAssessmentData
+        if (data['meterAssessmentData'] != null) {
+          print('meterAssessmentData: ${data['meterAssessmentData']}');
+        }
+      }
+      print('========== END API RESPONSE ==========');
 
       // Handle different response structures
       dynamic responseData;
@@ -109,10 +148,21 @@ class DashboardController extends StateNotifier<DashboardState> {
       Map<String, dynamic>? userData;
       dynamic assessmentData;  // Can be List or Map
       dynamic meterData;  // Can be List or Map
+      bool isUserSubscribed = false;  // Track subscription status from API
 
       if (responseData is Map) {
         userData = responseData['User'] is Map ? responseData['User'] :
                   responseData['user'] is Map ? responseData['user'] : null;
+
+        // Check if user has subscription status in the API response
+        if (userData != null && userData is Map) {
+          isUserSubscribed = userData['isSubscribed'] == true ||
+                           userData['isPremium'] == true ||
+                           userData['isPurchased'] == true ||
+                           userData['subscriptionStatus'] == 'active';
+
+          print('🔐 Subscription status from API - isSubscribed: ${userData['isSubscribed']}, isPremium: ${userData['isPremium']}, final: $isUserSubscribed');
+        }
 
         // Assessment can be a List or Map
         assessmentData = responseData['Assessment'] ?? responseData['assessment'];
@@ -193,6 +243,23 @@ class DashboardController extends StateNotifier<DashboardState> {
         meterDataList = meterData;
       }
 
+      // Determine final subscription status
+      // Priority: API subscription status > IAP purchase state
+      bool finalSubscriptionStatus = isUserSubscribed;
+
+      // Only check IAP if API doesn't have subscription info
+      if (!isUserSubscribed) {
+        try {
+          final purchaseState = _ref.read(purchaseControllerProvider);
+          finalSubscriptionStatus = purchaseState.hasActiveSubscription;
+          print('📱 Using IAP subscription status: $finalSubscriptionStatus');
+        } catch (e) {
+          print('⚠️ Could not check IAP state: $e');
+        }
+      } else {
+        print('✅ Using API subscription status: $finalSubscriptionStatus');
+      }
+
       // Update state with dashboard data
       state = state.copyWith(
         isLoading: false,
@@ -200,9 +267,11 @@ class DashboardController extends StateNotifier<DashboardState> {
         user: userData,
         assessment: firstAssessment,
         meterAssessmentData: meterDataList,
+        isPurchased: finalSubscriptionStatus,  // Set the subscription status
       );
 
       print('✅ Dashboard state updated successfully');
+      print('🔓 Final subscription status: $finalSubscriptionStatus');
 
     } catch (e, stackTrace) {
       print('❌ Dashboard API Error: $e');

@@ -587,8 +587,13 @@ class PurchaseController extends StateNotifier<PurchaseState> {
     if (!state.canMakePurchases) return;
 
     try {
+      print('🔄 Auto-restoring purchases on startup like React Native...');
       // Silently restore purchases on startup like React Native
       await _inAppPurchase.restorePurchases();
+
+      // IMPORTANT: This matches React Native behavior from Home.js:267-283
+      // The purchase stream handler will call _handleRestoredPurchase
+      // which will update the backend subscription status
     } catch (e) {
       // Silently fail - user hasn't purchased before
       print('No previous purchases found: $e');
